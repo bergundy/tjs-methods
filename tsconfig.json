@@ -6,8 +6,6 @@
         "module": "commonjs",
         "moduleResolution": "node",
         "emitDecoratorMetadata": true,
-        "checkJs": true,
-        "allowJs": true,
         "experimentalDecorators": true,
         "downlevelIteration": true,
         "sourceMap": true,

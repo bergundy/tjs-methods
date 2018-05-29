@@ -27,8 +27,8 @@ export interface Definition extends tjs.Definition {
 }
 
 export class Plugin {
-  public hook(symbol: ts.Symbol | undefined, definition: Definition): boolean {
-    const node = symbol && symbol.getDeclarations() !== undefined ? symbol.getDeclarations()![0] : null;
+  public override(symbol: ts.Symbol, definition: Definition): boolean {
+    const node = symbol.getDeclarations() !== undefined ? symbol.getDeclarations()![0] : null;
     if (node && node.kind === ts.SyntaxKind.MethodDeclaration) {
       this.getMethodDefinition(node as ts.MethodDeclaration, definition);
       return true;
