@@ -1,0 +1,32 @@
+{
+  "name": "tjs-methods",
+  "version": "0.0.1",
+  "description": "Methods plugin for typescript-json-schema",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bergundy/tjs-methods.git"
+  },
+  "keywords": [
+    "typescript-json-schema",
+    "tjs",
+    "schema",
+    "methods"
+  ],
+  "author": "bergundy",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/bergundy/tjs-methods/issues"
+  },
+  "homepage": "https://github.com/bergundy/tjs-methods#readme",
+  "devDependencies": {
+    "typescript": "^2.8.3"
+  },
+  "dependencies": {
+    "typescript-json-schema": "^0.24.1"
+  }
+}

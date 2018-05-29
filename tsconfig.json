@@ -1,0 +1,23 @@
+{
+    "version": "2.4.2",
+    "compilerOptions": {
+        "lib": ["es2017", "esnext"],
+        "target": "es2017",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "emitDecoratorMetadata": true,
+        "checkJs": true,
+        "allowJs": true,
+        "experimentalDecorators": true,
+        "downlevelIteration": true,
+        "sourceMap": true,
+        "strictNullChecks": true,
+        "outDir": "dist"
+    },
+    "include": [
+        "src/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}
