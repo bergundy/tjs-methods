@@ -55,6 +55,34 @@ describe('typeToString', () => {
 });
 
 describe('transform', () => {
+  it('transforms a simple class with single attribute', () => {
+    const result = transform({
+      definitions: {
+        Test: {
+          properties: {
+            x: {
+              type: 'number',
+            },
+          },
+        },
+      },
+    });
+    expect(result).to.eql({
+      classes: [
+        {
+          name: 'Test',
+          attributes: [
+            {
+              name: 'x',
+              type: 'number',
+            },
+          ],
+          methods: [],
+        },
+      ],
+    });
+  });
+
   it('transforms a simple class with single method', () => {
     const result = transform({
       definitions: {
@@ -82,6 +110,7 @@ describe('transform', () => {
       classes: [
         {
           name: 'Test',
+          attributes: [],
           methods: [
             {
               name: 'add',

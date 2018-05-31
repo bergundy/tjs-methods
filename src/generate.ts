@@ -69,6 +69,12 @@ export function transform(schema): MethodSpec {
         })),
         returnType: typeToString(returnType),
       })),
+      attributes: Object.entries(properties)
+      .filter(([_, v]: Pair) => v.type !== 'method')
+      .map(([attrName, attrDef]: Pair) => ({
+        name: attrName,
+        type: typeToString(attrDef.type),
+      })),
     })),
   };
 }
