@@ -1,5 +1,6 @@
 export interface User {
   name: string;
+  createdAt: Date;
 }
 
 export class Example {
@@ -22,11 +23,15 @@ export class Example {
     return a + b;
   }
 
+  public getTimeOfDay(): Date {
+    return new Date();
+  }
+
   public async hello(user: User): Promise<string> {
     return `Hello, ${user.name}`;
   }
 
   public async auth(name: string): Promise<User> {
-    return { name };
+    return { name, createdAt: new Date() };
   }
 }
