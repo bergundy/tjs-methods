@@ -33,9 +33,17 @@
     "typescript": "^2.8.3"
   },
   "dependencies": {
+    "@types/koa": "^2.0.45",
     "@types/lodash": "^4.14.109",
+    "@types/request-promise-native": "^1.0.14",
+    "ajv": "^6.5.0",
+    "koa": "^2.5.1",
+    "koa-bodyparser": "^4.2.1",
+    "koa-json-error": "^3.1.2",
     "lodash": "^4.17.10",
     "mz": "^2.7.0",
+    "request": "^2.87.0",
+    "request-promise-native": "^1.0.5",
     "toposort": "^2.0.2",
     "typescript-json-schema": "^0.24.1"
   }

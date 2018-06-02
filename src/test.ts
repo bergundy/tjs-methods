@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import 'mocha';
-import { transform, typeToString, findRefs } from './generate';
+import { transform, typeToString, findRefs, translateMethodsToValidSchema } from './generate';
 
 describe('findRefs', () => {
   it('finds all reffed types', () => {
@@ -56,7 +56,7 @@ describe('typeToString', () => {
 
 describe('transform', () => {
   it('transforms a simple class with single attribute', () => {
-    const result = transform({
+    const schema = {
       definitions: {
         Test: {
           properties: {
@@ -66,8 +66,10 @@ describe('transform', () => {
           },
         },
       },
-    });
+    };
+    const result = transform(schema);
     expect(result).to.eql({
+      schema: JSON.stringify(schema),
       classes: [
         {
           name: 'Test',
@@ -84,7 +86,7 @@ describe('transform', () => {
   });
 
   it('transforms a simple class with single method', () => {
-    const result = transform({
+    const schema = {
       definitions: {
         Test: {
           properties: {
@@ -105,8 +107,10 @@ describe('transform', () => {
           },
         },
       },
-    });
+    };
+    const result = transform(schema);
     expect(result).to.eql({
+      schema: JSON.stringify(translateMethodsToValidSchema(schema)),
       classes: [
         {
           name: 'Test',

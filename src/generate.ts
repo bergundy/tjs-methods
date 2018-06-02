@@ -20,14 +20,27 @@ export function typeToString(returnType: ReturnType): string {
   }
   return returnType.$ref.replace(/#\/definitions\//, '');
 }
+export interface Parameter {
+  name: string;
+  type: string;
+  last: boolean;
+}
 
-export interface MethodSpec {
+export interface Method {
+  name: string;
+  parameters: Parameter[];
+  returnType: string;
+}
+
+export interface ServiceSpec {
+  schema: string;
   classes: Array<{
     name: string,
-    methods: Array<{
+    attributes: Array<{
       name: string,
-      returnType: string,
+      type: string,
     }>,
+    methods: Method[],
   }>;
 }
 
@@ -52,15 +65,59 @@ export function sortDefinitions(definitions): Pair[] {
   return Object.entries(definitions).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b));
 }
 
-export function transform(schema): MethodSpec {
+export function translateMethodParamType({ type }) {
+  if (type.$ref) {
+    return { $ref: `defs${type.$ref}` };
+  }
+  return { type };
+}
+
+export function translateMethodToValidSchema({ parameters, ...s }: any) {
+  if (s.type === 'method') {
+    const rest: any = {};
+    if (parameters.length === 0) {
+      rest.items = {};
+    } else if (parameters.length === 1) {
+      rest.items = translateMethodParamType(parameters[0]);
+    } else {
+      rest.items = parameters.map(translateMethodParamType);
+    }
+    return {
+      ...s,
+      type: 'array',
+      maxItems: parameters.length,
+      ...rest,
+    };
+  }
+  return s;
+}
+
+export function translateMethodsToValidSchema({ definitions, ...rest }) {
+  return {
+    ...rest,
+    definitions: fromPairs(Object.entries(definitions).map(([name, { properties, ...r }]: Pair) => [
+      name,
+      {
+        ...r,
+        properties: fromPairs(Object.entries(properties).map(([prop, s]) => [
+          prop,
+          translateMethodToValidSchema(s),
+        ])),
+      },
+    ])),
+  };
+}
+
+export function transform(schema): ServiceSpec {
   const { definitions } = schema;
   const sortedDefinitions = sortDefinitions(definitions);
   return {
+    schema: JSON.stringify(translateMethodsToValidSchema(schema)),
     classes: sortedDefinitions.map(([className, { properties }]: Pair) => ({
       name: className,
       methods: Object.entries(properties)
       .filter(([_, v]: Pair) => v.type === 'method')
-      .map(([methodName, { returnType, parameters }]: Pair) => ({
+      .map(([methodName, { returnType, parameters }]: Pair): Method => ({
         name: methodName,
         parameters: parameters.map(({ name, type }, i) => ({
           name,
