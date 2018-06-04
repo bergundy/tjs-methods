@@ -7,19 +7,28 @@ async function loadJson(path) {
 }
 type Pair = [string, any];
 
-type ReturnType = string | {
+type TypeOrRef = string | {
  $ref: string;
 };
 
-export function typeToString(returnType: ReturnType): string {
-  if (typeof returnType === 'string') {
-    if (returnType === 'integer') {
+interface TypeDef {
+  type: TypeOrRef;
+  format?: string;
+}
+
+export function typeToString({ type, format }: TypeDef): string {
+  if (typeof type === 'string') {
+    if (type === 'integer') {
       return 'number';
     }
-    return returnType;
+    if (type === 'string' && format === 'date-time') {
+      return 'Date';
+    }
+    return type;
   }
-  return returnType.$ref.replace(/#\/definitions\//, '');
+  return type.$ref.replace(/#\/definitions\//, '');
 }
+
 export interface Parameter {
   name: string;
   type: string;
@@ -117,20 +126,20 @@ export function transform(schema): ServiceSpec {
       name: className,
       methods: Object.entries(properties)
       .filter(([_, v]: Pair) => v.type === 'method')
-      .map(([methodName, { returnType, parameters }]: Pair): Method => ({
+      .map(([methodName, method]: Pair): Method => ({
         name: methodName,
-        parameters: parameters.map(({ name, type }, i) => ({
-          name,
-          type: typeToString(type),
-          last: i === parameters.length - 1,
+        parameters: method.parameters.map((param, i) => ({
+          name: param.name,
+          type: typeToString(param),
+          last: i === method.parameters.length - 1,
         })),
-        returnType: typeToString(returnType),
+        returnType: typeToString({ type: method.returnType }),
       })),
       attributes: Object.entries(properties)
       .filter(([_, v]: Pair) => v.type !== 'method')
       .map(([attrName, attrDef]: Pair) => ({
         name: attrName,
-        type: typeToString(attrDef.type),
+        type: typeToString(attrDef),
       })),
     })),
   };

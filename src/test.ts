@@ -39,17 +39,21 @@ describe('findRefs', () => {
 
 describe('typeToString', () => {
   it('transforms integer to number', () => {
-    const result = typeToString('integer');
+    const result = typeToString({ type: 'integer' });
     expect(result).to.equal('number');
   });
 
   it('passes through a string type', () => {
-    const result = typeToString('string');
+    const result = typeToString({ type: 'string' });
     expect(result).to.equal('string');
   });
 
   it('transforms ref into class name', () => {
-    const result = typeToString({ $ref: 'Date' });
+    const result = typeToString({ type: { $ref: 'User' } });
+    expect(result).to.equal('User');
+  });
+  it('transforms date-time format into Date', () => {
+    const result = typeToString({ type: 'string', format: 'date-time' });
     expect(result).to.equal('Date');
   });
 });

@@ -7,6 +7,7 @@ export interface TypeArgument {
     };
     typeArguments?: TypeArgument[];
     properties?: {};
+    format?: string;
     constraint?: TypeArgument;
 }
 
@@ -130,6 +131,11 @@ export class Plugin {
       const typeName = type.typeName.getText();
       if (typeName === "Promise") {
         return this.getTypeDescription(type.typeArguments![0]);
+      }
+      if (typeName === "Date") {
+        typeObject.type = "string";
+        typeObject.format = "date-time";
+        return typeObject;
       }
       typeObject.type = { $ref: `#/definitions/${typeName}` };
       if (type.typeArguments && type.typeArguments.length > 0) {
