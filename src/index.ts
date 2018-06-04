@@ -42,7 +42,7 @@ export class Plugin {
     if (declaration.typeParameters) {
       definition.typeParameters = this.getMethodParameters(declaration.typeParameters);
     }
-    var returnType = this.getTypeDescription(declaration.type);
+    const returnType = this.getTypeDescription(declaration.type);
     if (returnType.type) {
       definition.returnType = returnType.type;
     }
@@ -56,7 +56,7 @@ export class Plugin {
     return definition;
   }
 
-  private getMethodParameters(parameters: ts.NodeArray<ts.Declaration>): Array<Parameter> {
+  private getMethodParameters(parameters: ts.NodeArray<ts.Declaration>): Parameter[] {
     return [...parameters].sort((param1, param2) => {
       return param1.pos - param2.pos;
     }).map((parameter: ts.Declaration) => {
@@ -78,7 +78,10 @@ export class Plugin {
       name: parameter.name.getText(),
     };
 
-    if (this.declarationIsPrameterDeclaration(parameter) && parameter.questionToken && parameter.questionToken.kind === ts.SyntaxKind.QuestionToken) {
+    if (
+      this.declarationIsPrameterDeclaration(parameter)
+      && parameter.questionToken
+      && parameter.questionToken.kind === ts.SyntaxKind.QuestionToken) {
       parameterObject.optional = true;
     }
 
@@ -101,7 +104,8 @@ export class Plugin {
     return declaration.kind === ts.SyntaxKind.Parameter;
   }
 
-  private declarationIsTypeParameterDeclaration(declaration: ts.Declaration): declaration is ts.TypeParameterDeclaration {
+  private declarationIsTypeParameterDeclaration(declaration: ts.Declaration
+  ): declaration is ts.TypeParameterDeclaration {
     return declaration.kind === ts.SyntaxKind.TypeParameter;
   }
 
@@ -142,8 +146,7 @@ export class Plugin {
     } else if (this.typeIsTypeLiteral(type)) {
       typeObject.type = "object";
       typeObject.properties = {};
-      for (let i = 0; i < type.members.length; i++) {
-        const typeMember: ts.TypeElement = type.members[i];
+      for (const typeMember of type.members) {
         if (this.typeElementIsPropertySignature(typeMember)) {
           typeObject.properties[typeMember.name.getText()] = this.getTypeDescription(typeMember.type);
         }
