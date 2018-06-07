@@ -14,10 +14,23 @@ export interface Example {
     returns: integer;
   };
 
+  auth: {
+    params: {
+      name: string;
+    };
+    returns: User;
+  };
+
   greet: {
     params: {
       user: User;
     };
     returns: string;
+  };
+
+  getTimeOfDay: {
+    params: {
+    };
+    returns: Date;
   };
 }

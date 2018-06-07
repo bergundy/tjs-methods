@@ -14,7 +14,7 @@ class Handler {
   }
 
   public async greet(user: User): Promise<string> {
-    return `Hello, ${user.name}`;
+    return `Hello, ${user.name} ${user.createdAt.getTime()}`;
   }
 }
 
