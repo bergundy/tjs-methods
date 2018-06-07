@@ -14,7 +14,7 @@ dist/%.js: src/%.ts
 .PHONY: schema
 schema: example/schema.json
 
-service/schema.ts: $(JS_FILES) example/schema.json
+service/schema.ts: $(JS_FILES) example/schema.json template.ts
 	node dist/generate.js | mustache - template.ts > service/schema.ts
 
 .PHONY: codegen
