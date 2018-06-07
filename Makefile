@@ -1,9 +1,31 @@
-build:
-	npm run build
-
 TJS ?= typescript-json-schema
 # TJS ?= ./node_modules/.bin/typescript-json-schema
 
-schema: build
-	$(TJS) --no-filterMethods --required --noExtraProps --propOrder -o example/schema.json --plugins tjs-methods -- ./example/tsconfig.json '*'
+TS_FILES := $(shell find src -type f -name '*.ts')
+JS_FILES := $(patsubst src/%.ts, dist/%.js, $(TS_FILES))
 
+
+example/schema.json: example/rpc.ts example/tsconfig.json
+	$(TJS) --required --noExtraProps --propOrder -o example/schema.json -- ./example/tsconfig.json '*'
+
+dist/%.js: src/%.ts
+	npm run build
+
+.PHONY: schema
+schema: example/schema.json
+
+service/schema.ts: $(JS_FILES) example/schema.json
+	node dist/generate.js | mustache - template.ts > service/schema.ts
+
+.PHONY: codegen
+codegen: service/schema.ts
+
+.PHONY: build
+build: $(JS_FILES)
+
+.PHONY: test
+test:
+	npm test
+
+clean:
+	rm -rf example/schema.json service/schema.ts dist/*
