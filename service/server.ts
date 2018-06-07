@@ -13,7 +13,7 @@ class Handler {
     return new Date();
   }
 
-  public async hello(user: User): Promise<string> {
+  public async greet(user: User): Promise<string> {
     return `Hello, ${user.name}`;
   }
 }

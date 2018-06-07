@@ -1,5 +1,5 @@
 import * as fs from 'mz/fs';
-import { fromPairs, isPlainObject, flatMap } from 'lodash';
+import { fromPairs, isPlainObject, flatMap, mapValues } from 'lodash';
 import * as toposort from 'toposort';
 
 async function loadJson(path) {
@@ -7,16 +7,13 @@ async function loadJson(path) {
 }
 type Pair = [string, any];
 
-type TypeOrRef = string | {
- $ref: string;
-};
-
 interface TypeDef {
-  type: TypeOrRef;
+  type?: string;
   format?: string;
+  $ref?: string;
 }
 
-export function typeToString({ type, format }: TypeDef): string {
+export function typeToString({ type, format, $ref }: TypeDef): string {
   if (typeof type === 'string') {
     if (type === 'integer') {
       return 'number';
@@ -26,7 +23,10 @@ export function typeToString({ type, format }: TypeDef): string {
     }
     return type;
   }
-  return type.$ref.replace(/#\/definitions\//, '');
+  if (typeof $ref === 'string') {
+    return $ref.replace(/#\/definitions\//, '');
+  }
+  throw new Error('Could not determine type');
 }
 
 export interface Parameter {
@@ -74,69 +74,51 @@ export function sortDefinitions(definitions): Pair[] {
   return Object.entries(definitions).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b));
 }
 
-export function translateMethodParamType({ type }) {
-  if (type.$ref) {
-    return { $ref: `defs${type.$ref}` };
+export function translateRefs(schema) {
+  if (schema.$ref) {
+    return { $ref: `defs${schema.$ref}` };
   }
-  return { type };
+  if (isPlainObject(schema)) {
+    return mapValues(schema, translateRefs);
+  }
+  if (Array.isArray(schema)) {
+    return schema.map(translateRefs);
+  }
+  return schema;
 }
 
-export function translateMethodToValidSchema({ parameters, ...s }: any) {
-  if (s.type === 'method') {
-    const rest: any = {};
-    if (parameters.length === 0) {
-      rest.items = {};
-    } else if (parameters.length === 1) {
-      rest.items = translateMethodParamType(parameters[0]);
-    } else {
-      rest.items = parameters.map(translateMethodParamType);
-    }
-    return {
-      ...s,
-      type: 'array',
-      maxItems: parameters.length,
-      ...rest,
-    };
-  }
-  return s;
-}
-
-export function translateMethodsToValidSchema({ definitions, ...rest }) {
-  return {
-    ...rest,
-    definitions: fromPairs(Object.entries(definitions).map(([name, { properties, ...r }]: Pair) => [
-      name,
-      {
-        ...r,
-        properties: fromPairs(Object.entries(properties).map(([prop, s]) => [
-          prop,
-          translateMethodToValidSchema(s),
-        ])),
-      },
-    ])),
-  };
+function isMethod(m) {
+  return m && m.properties && m.properties.params && m.properties.returns;
 }
 
 export function transform(schema): ServiceSpec {
   const { definitions } = schema;
   const sortedDefinitions = sortDefinitions(definitions);
   return {
-    schema: JSON.stringify(translateMethodsToValidSchema(schema)),
-    classes: sortedDefinitions.map(([className, { properties }]: Pair) => ({
+    schema: JSON.stringify(translateRefs(schema)),
+    classes: sortedDefinitions
+    .filter(([_, { properties }]: Pair) => properties)
+    .map(([className, { properties }]: Pair) => ({
       name: className,
       methods: Object.entries(properties)
-      .filter(([_, v]: Pair) => v.type === 'method')
-      .map(([methodName, method]: Pair): Method => ({
-        name: methodName,
-        parameters: method.parameters.map((param, i) => ({
-          name: param.name,
-          type: typeToString(param),
-          last: i === method.parameters.length - 1,
-        })),
-        returnType: typeToString({ type: method.returnType }),
-      })),
+      .filter(([_, method]: Pair) => isMethod(method))
+      .map(([methodName, method]: Pair): Method => {
+        const params = Object.entries(method.properties.params.properties);
+        const order = method.properties.params.propertyOrder;
+        return {
+          name: methodName,
+          parameters: params
+          .sort(([n1], [n2]) => order.indexOf(n1) - order.indexOf(n2))
+          .map(([paramName, param], i) => ({
+            name: paramName,
+            type: typeToString(param as TypeDef),
+            last: i === params.length - 1,
+          })),
+          returnType: typeToString(method.properties.returns),
+        };
+      }),
       attributes: Object.entries(properties)
-      .filter(([_, v]: Pair) => v.type !== 'method')
+      .filter(([_, method]: Pair) => !isMethod(method))
       .map(([attrName, attrDef]: Pair) => ({
         name: attrName,
         type: typeToString(attrDef),
@@ -146,9 +128,14 @@ export function transform(schema): ServiceSpec {
 }
 
 async function main() {
-  const schema = await loadJson('example/schema.json');
-  const spec = transform(schema);
-  console.log(JSON.stringify(spec));
+  try {
+    const schema = await loadJson('example/schema.json');
+    const spec = transform(schema);
+    console.log(JSON.stringify(spec));
+  } catch (err) {
+    console.error(err);
+    process.exit(1);
+  }
 }
 
 main();

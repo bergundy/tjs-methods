@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import 'mocha';
-import { transform, typeToString, findRefs, translateMethodsToValidSchema } from './generate';
+import { transform, typeToString, findRefs } from './generate';
 
 describe('findRefs', () => {
   it('finds all reffed types', () => {
@@ -49,7 +49,7 @@ describe('typeToString', () => {
   });
 
   it('transforms ref into class name', () => {
-    const result = typeToString({ type: { $ref: 'User' } });
+    const result = typeToString({ $ref: '#/definitions/User' });
     expect(result).to.equal('User');
   });
   it('transforms date-time format into Date', () => {
@@ -95,18 +95,25 @@ describe('transform', () => {
         Test: {
           properties: {
             add: {
-              type: 'method',
-              parameters: [
-                {
-                  name: 'a',
+              method: '',
+              type: 'object',
+              properties: {
+                params: {
+                  type: 'object',
+                  properties: {
+                    b: {
+                      type: 'integer',
+                    },
+                    a: {
+                      type: 'integer',
+                    },
+                  },
+                  propertyOrder: ['a', 'b'],
+                },
+                returns: {
                   type: 'integer',
                 },
-                {
-                  name: 'b',
-                  type: 'integer',
-                },
-              ],
-              returnType: 'integer',
+              },
             },
           },
         },
@@ -114,7 +121,7 @@ describe('transform', () => {
     };
     const result = transform(schema);
     expect(result).to.eql({
-      schema: JSON.stringify(translateMethodsToValidSchema(schema)),
+      schema: JSON.stringify(schema),
       classes: [
         {
           name: 'Test',
@@ -148,32 +155,40 @@ describe('transform', () => {
         A: {
           properties: {
             foo: {
-              type: 'method',
-              parameters: [
-                {
-                  name: 'b',
-                  type: {
-                    $ref: '#/definitions/B',
+              type: 'object',
+              properties: {
+                params: {
+                  properties: {
+                    b: {
+                      $ref: '#/definitions/B',
+                    },
                   },
+                  propertyOrder: ['b'],
                 },
-              ],
-              returnType: 'string',
+                returns: {
+                  type: 'string',
+                },
+              },
             },
           },
         },
         B: {
           properties: {
             bar: {
-              type: 'method',
-              parameters: [
-                {
-                  name: 'c',
-                  type: {
-                    $ref: '#/definitions/C',
+              type: 'object',
+              properties: {
+                params: {
+                  properties: {
+                    c: {
+                      $ref: '#/definitions/C',
+                    },
                   },
+                  propertyOrder: ['b'],
                 },
-              ],
-              returnType: 'string',
+                returns: {
+                  type: 'string',
+                },
+              },
             },
           },
         },

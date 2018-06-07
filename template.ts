@@ -23,15 +23,12 @@ export class {{name}}Client {
   {{#methods}}
 
   public async {{name}}({{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}> {
-    return await request.post(this.serverUrl, {
+    return await request.post(`${this.serverUrl}/{{name}}`, {
       json: true,
       body: {
-        method: '{{name}}',
-        args: [
-          {{#parameters}}
-          {{name}},
-          {{/parameters}}
-        ],
+        {{#parameters}}
+        {{name}},
+        {{/parameters}}
       }
     }) as {{returnType}};
   }
@@ -43,10 +40,12 @@ export class {{name}}Client {
 
 // Server Code
 import * as Koa from 'koa';
+import * as Router from 'koa-router';
 import * as http from 'http';
 import * as bodyParser from 'koa-bodyparser';
 import * as errors from 'koa-json-error';
 import * as Ajv from 'ajv';
+import { basename } from 'path';
 
 // tslint:disable-next-line:no-shadowed-variable
 export function validate(schema: { definitions: any }, className: string) {
@@ -56,10 +55,11 @@ export function validate(schema: { definitions: any }, className: string) {
   const validators = {};
   const methods = Object.entries(schema.definitions[className].properties);
   for (const [method, s] of methods) {
-    validators[method] = ajv.compile(s);
+    validators[method] = ajv.compile(s.properties.params);
   }
   return async (ctx, next) => {
-    const { method, args } = ctx.request.body;
+    const { method } = ctx.params;
+    const args = ctx.request.body;
     const validator = validators[method];
     if (!validator) {
       ctx.throw(400, 'Bad Request', {
@@ -80,21 +80,29 @@ export function validate(schema: { definitions: any }, className: string) {
 
 export class {{name}}Server {
   protected app: Koa;
+  protected router: Router;
 
   // tslint:disable-next-line:no-shadowed-variable
   public constructor(protected readonly handler: {{name}}, stackTraceInError = false) {
     this.app = new Koa();
+    this.router = new Router();
+
+    this.router.post('/:method', validate(schema, '{{name}}'));
+    this.router.post('/:method', async (ctx) => {
+      const { method } = ctx.params;
+      const args = (ctx.request as any).body;
+      const order = schema.definitions.{{name}}.properties[method].properties.params.propertyOrder;
+      const sortedArgs = Object.entries(args).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b)).map(([_, v]) => v);
+      // TODO: validate body
+      ctx.body = JSON.stringify(await this.handler[method](...sortedArgs));
+    });
 
     this.app.use(errors({
       postFormat: (e, { stack, ...rest }) => stackTraceInError ? { stack, ...rest } : rest,
     }));
     this.app.use(bodyParser());
-    this.app.use(validate(schema, '{{name}}'));
-    this.app.use(async (ctx) => {
-      const { method, args } = (ctx.request as any).body;
-      // TODO: validate body
-      ctx.body = JSON.stringify(await this.handler[method](...args));
-    });
+    this.app.use(this.router.routes());
+    this.app.use(this.router.allowedMethods());
   }
 
   public listen(port: number, host: string = 'localhost') {

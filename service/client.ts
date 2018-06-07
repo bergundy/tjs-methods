@@ -5,8 +5,10 @@ async function main() {
   try {
     const x = await client.add(1, 2);
     console.log(x);
-    const now = await client.getTimeOfDay();
-    console.log(now.getDate());
+    const greeting = await client.greet({ name: 'Vova', createdAt: new Date() });
+    console.log(greeting);
+    // const now = await client.getTimeOfDay();
+    // console.log(now.getDate());
   } catch (err) {
     console.error(err.message);
   }

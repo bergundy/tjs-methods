@@ -3,35 +3,21 @@ export interface User {
   createdAt: Date;
 }
 
-export class Example {
-  // Public methods are published as functions
-  /**
-   * Add 2 numbers
-   *
-   * @param a
-   * @minimum 0
-   * @bn-type integer
-   *
-   * @param b
-   * @minimum 0
-   * @bn-type integer
-   *
-   * @returns
-   * @bn-type integer
-   */
-  public add(a: number, b: number): number {
-    return a + b;
-  }
+export type integer = number;
 
-  public getTimeOfDay(): Date {
-    return new Date();
-  }
+export interface Example {
+  add: {
+    params: {
+      a: integer;
+      b: integer;
+    };
+    returns: integer;
+  };
 
-  public async hello(user: User): Promise<string> {
-    return `Hello, ${user.name}`;
-  }
-
-  public async auth(name: string): Promise<User> {
-    return { name, createdAt: new Date() };
-  }
+  greet: {
+    params: {
+      user: User;
+    };
+    returns: string;
+  };
 }
