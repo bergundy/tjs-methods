@@ -56,37 +56,7 @@ import * as Router from 'koa-router';
 import * as http from 'http';
 import * as bodyParser from 'koa-bodyparser';
 import * as errors from 'koa-json-error';
-import * as Ajv from 'ajv';
-
-// tslint:disable-next-line:no-shadowed-variable
-export function validate(schema: { definitions: any }, className: string) {
-  const ajv = new Ajv({ useDefaults: true });
-  ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
-  for (const [k, v] of Object.entries(schema.definitions)) {
-    ajv.addSchema(v, `#/definitions/${k}`);
-  }
-  const validators = {};
-  const methods = Object.entries(schema.definitions[className].properties);
-  for (const [method, s] of methods) {
-    validators[method] = ajv.compile(s.properties.params);
-  }
-  return async (ctx, next) => {
-    const { method } = ctx.params;
-    const args = ctx.request.body;
-    const validator = validators[method];
-    if (!validator) {
-      ctx.throw(400, 'Bad Request', {
-        errors: [{ message: 'Method not supported', method }],
-      });
-    }
-    if (!validator(args)) {
-      ctx.throw(400, 'Bad Request', {
-        errors: validator.errors,
-      });
-    }
-    await next();
-  };
-}
+import { validate } from '../dist/lib/koaMW';  // TODO: fix import path
 
 {{#classes}}
 {{^attributes}}

@@ -1,6 +1,7 @@
-import { zip, get, mapValues } from 'lodash';
+import { zip, get, mapValues, fromPairs } from 'lodash';
+import * as Ajv from 'ajv';
 
-export function coerceWithSchema(schema: any, value: any, defsSchema = {}) {
+export function coerceWithSchema(schema: any, value: any, defsSchema = {}): any {
   if (schema.$ref) {
     const getter = schema.$ref.replace(/^#\//, '').replace(/\//g, '.');
     schema = get(defsSchema, getter);
@@ -18,4 +19,19 @@ export function coerceWithSchema(schema: any, value: any, defsSchema = {}) {
     return new Date(value);
   }
   return value;
+}
+
+export interface ClassValidator {
+  [method: string]: Ajv.ValidateFunction;
+}
+
+export function createClassValidator(schema: { definitions: any }, className, field): ClassValidator {
+  const ajv = new Ajv({ useDefaults: true });
+  ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
+  for (const [k, v] of Object.entries(schema.definitions)) {
+    ajv.addSchema(v, `#/definitions/${k}`);
+  }
+  return fromPairs(Object.entries(schema.definitions[className].properties).map(([method, s]) => [
+    method, ajv.compile((s as any).properties[field]),
+  ]));
 }
