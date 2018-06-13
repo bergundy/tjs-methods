@@ -74,19 +74,6 @@ export function sortDefinitions(definitions): Pair[] {
   return Object.entries(definitions).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b));
 }
 
-export function translateRefs(schema) {
-  if (schema.$ref) {
-    return { $ref: `defs${schema.$ref}` };
-  }
-  if (isPlainObject(schema)) {
-    return mapValues(schema, translateRefs);
-  }
-  if (Array.isArray(schema)) {
-    return schema.map(translateRefs);
-  }
-  return schema;
-}
-
 function isMethod(m) {
   return m && m.properties && m.properties.params && m.properties.returns;
 }
@@ -95,7 +82,7 @@ export function transform(schema): ServiceSpec {
   const { definitions } = schema;
   const sortedDefinitions = sortDefinitions(definitions);
   return {
-    schema: JSON.stringify(translateRefs(schema)),
+    schema: JSON.stringify(schema),
     classes: sortedDefinitions
     .filter(([_, { properties }]: Pair) => properties)
     .map(([className, { properties }]: Pair) => ({

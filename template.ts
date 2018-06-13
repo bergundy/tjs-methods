@@ -2,7 +2,7 @@ import { isPlainObject, zip, get, mapValues } from 'lodash';
 
 function resolveRefs(schema, definitions) {
   if (schema.$ref) {
-    const getter = schema.$ref.replace(/^defs#\//, '').replace(/\//g, '.');
+    const getter = schema.$ref.replace(/^#\//, '').replace(/\//g, '.');
     return resolveRefs(get(definitions, getter), definitions);
   }
   if (Array.isArray(schema)) {
@@ -92,7 +92,9 @@ import * as Ajv from 'ajv';
 export function validate(schema: { definitions: any }, className: string) {
   const ajv = new Ajv({ useDefaults: true });
   ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
-  ajv.addSchema({ ...schema, $id: 'defs' });
+  for (const [k, v] of Object.entries(schema.definitions)) {
+    ajv.addSchema(v, `#/definitions/${k}`);
+  }
   const validators = {};
   const methods = Object.entries(schema.definitions[className].properties);
   for (const [method, s] of methods) {
