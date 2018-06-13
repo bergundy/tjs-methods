@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "mocha -r ts-node/register src/test.ts"
+    "test": "mocha dist/test.js dist/**/test.js"
   },
   "repository": {
     "type": "git",

@@ -24,7 +24,7 @@ codegen: service/schema.ts
 build: $(JS_FILES)
 
 .PHONY: test
-test:
+test: build
 	npm test
 
 clean:
