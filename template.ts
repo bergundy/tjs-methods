@@ -1,34 +1,4 @@
-import { isPlainObject, zip, get, mapValues } from 'lodash';
-
-function resolveRefs(schema, definitions) {
-  if (schema.$ref) {
-    const getter = schema.$ref.replace(/^#\//, '').replace(/\//g, '.');
-    return resolveRefs(get(definitions, getter), definitions);
-  }
-  if (Array.isArray(schema)) {
-    return schema.map((s) => resolveRefs(s, definitions));
-  }
-  if (isPlainObject(schema)) {
-    return mapValues(schema, (s) => resolveRefs(s, definitions));
-  }
-  return schema;
-}
-
-function coerceWithSchema(schema, value) {
-  if (schema.type === 'array') {
-    if (Array.isArray(schema.items)) {
-      return zip(schema.items, value).map(([s, v]) => coerceWithSchema(s, v));
-    }
-    return value.map((v) => coerceWithSchema(schema.items, v));
-  }
-  if (schema.properties) {
-    return mapValues(value, (v, k) => coerceWithSchema(schema.properties[k], v));
-  }
-  if (schema.type === 'string' && schema.format === 'date-time') {
-    return new Date(value);
-  }
-  return value;
-}
+import { coerceWithSchema } from '../dist/lib/common';  // TODO: fix import path
 
 export const schema = {{{schema}}};
 
@@ -59,7 +29,7 @@ export class {{name}}Client {
 
   public constructor(protected readonly serverUrl: string, protected readonly connectTimeout: number = 3.0) {
     this.schemas = fromPairs({{name}}Client.methods.map((m) =>
-      [m, resolveRefs(schema.definitions.{{name}}.properties[m].properties.returns, schema)]));
+      [m, schema.definitions.{{name}}.properties[m].properties.returns, schema]));
   }
   {{#methods}}
 
@@ -72,7 +42,7 @@ export class {{name}}Client {
         {{/parameters}}
       }
     });
-    return coerceWithSchema(this.schemas.{{name}}, ret) as {{returnType}};
+    return coerceWithSchema(this.schemas.{{name}}, ret, schema) as {{returnType}};
   }
   {{/methods}}
 }
@@ -136,13 +106,13 @@ export class {{name}}Server {
     this.app = new Koa();
     this.router = new Router();
     this.schemas = fromPairs({{name}}Server.methods.map((m) =>
-      [m, resolveRefs(schema.definitions.{{name}}.properties[m].properties.params, schema)]));
+      [m, schema.definitions.{{name}}.properties[m].properties.params, schema]));
 
     this.router.post('/:method', validate(schema, '{{name}}'));
     this.router.post('/:method', async (ctx) => {
       const { method } = ctx.params;
       const args = (ctx.request as any).body;
-      const coerced = coerceWithSchema(this.schemas[method], args);
+      const coerced = coerceWithSchema(this.schemas[method], args, schema);
       const order = schema.definitions.{{name}}.properties[method].properties.params.propertyOrder;
       const sortedArgs = Object.entries(coerced).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b)).map(([_, v]) => v);
       // TODO: validate body
