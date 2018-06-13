@@ -85,7 +85,6 @@ export class {{name}}Server {
       const coerced = coerceWithSchema(this.schemas[method], args, schema);
       const order = schema.definitions.{{name}}.properties[method].properties.params.propertyOrder;
       const sortedArgs = Object.entries(coerced).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b)).map(([_, v]) => v);
-      // TODO: validate body
       ctx.body = JSON.stringify(await this.handler[method](...sortedArgs));
     });
 
