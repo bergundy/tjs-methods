@@ -1,6 +1,6 @@
 import { expect } from 'chai';
 import 'mocha';
-import { transform, typeToString, findRefs } from './generate';
+import { transform, typeToString, findRefs } from './transform';
 
 describe('findRefs', () => {
   it('finds all reffed types', () => {

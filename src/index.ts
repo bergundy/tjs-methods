@@ -1,184 +1,26 @@
-import * as ts from 'typescript';
+import { readFile } from 'mz/fs';
+import * as glob from 'glob';
 import * as tjs from 'typescript-json-schema';
+import * as mustache from 'mustache';
+import { promisify } from 'util';
+import { transform } from './transform';
 
-export interface TypeArgument {
-    type?: string | {
-        $ref: string;
-    };
-    typeArguments?: TypeArgument[];
-    properties?: {};
-    format?: string;
-    constraint?: TypeArgument;
-}
+export async function generate(filePattern: string): Promise<string> {
+  const paths = await promisify(glob)(filePattern);
+  const settings: tjs.PartialArgs = {
+    required: true,
+    noExtraProps: true,
+    propOrder: true,
+  };
 
-export type Parameter = TypeArgument & {
-    name: string;
-    optional?: boolean;
-};
+  const compilerOptions: tjs.CompilerOptions = {
+    strictNullChecks: true,
+  };
 
-export interface Definition extends tjs.Definition {
-    typeArguments?: TypeArgument[];
-    parameters?: Parameter[];
-    returnType?: string | {
-        $ref: string;
-    };
-    returnTypeArguments?: TypeArgument[];
-    typeParameters?: TypeArgument[];
-    optional?: boolean;
-}
+  const program = tjs.getProgramFromFiles(paths, compilerOptions);
 
-export class Plugin {
-  public override(symbol: ts.Symbol, definition: Definition): boolean {
-    const node = symbol.getDeclarations() !== undefined ? symbol.getDeclarations()![0] : null;
-    if (node && node.kind === ts.SyntaxKind.MethodDeclaration) {
-      this.getMethodDefinition(node as ts.MethodDeclaration, definition);
-      return true;
-    }
-    return false;
-  }
-
-  private getMethodDefinition(declaration: ts.MethodDeclaration, definition: Definition) {
-    definition.type = "method";
-    definition.parameters = this.getMethodParameters(declaration.parameters);
-    if (declaration.typeParameters) {
-      definition.typeParameters = this.getMethodParameters(declaration.typeParameters);
-    }
-    const returnType = this.getTypeDescription(declaration.type);
-    if (returnType.type) {
-      definition.returnType = returnType.type;
-    }
-    if (returnType.typeArguments) {
-      definition.returnTypeArguments = returnType.typeArguments;
-    }
-    if (declaration.questionToken && declaration.questionToken.kind === ts.SyntaxKind.QuestionToken) {
-      definition.optional = true;
-    }
-    delete definition.description;
-    return definition;
-  }
-
-  private getMethodParameters(parameters: ts.NodeArray<ts.Declaration>): Parameter[] {
-    return [...parameters].sort((param1, param2) => {
-      return param1.pos - param2.pos;
-    }).map((parameter: ts.Declaration) => {
-      return this.getMethodParameter(parameter);
-    });
-  }
-
-  private getMethodParameter(parameter: ts.Declaration): Parameter {
-    let typeObject: TypeArgument = {};
-    if (this.declarationIsPrameterDeclaration(parameter)) {
-      typeObject = this.getTypeDescription(parameter.type);
-    } else if (this.declarationIsTypeParameterDeclaration(parameter)) {
-      typeObject = this.getTypeDescription(parameter);
-    } else {
-      return {name: "__name_not_found__"};
-    }
-
-    const parameterObject: Parameter = {
-      name: parameter.name.getText(),
-    };
-
-    if (
-      this.declarationIsPrameterDeclaration(parameter)
-      && parameter.questionToken
-      && parameter.questionToken.kind === ts.SyntaxKind.QuestionToken) {
-      parameterObject.optional = true;
-    }
-
-    if (this.declarationIsTypeParameterDeclaration(parameter) && parameter.constraint) {
-      parameterObject.constraint = this.getTypeDescription(parameter.constraint);
-    }
-
-    if (typeObject.type) {
-      parameterObject.type = typeObject.type;
-    }
-
-    if (typeObject.typeArguments) {
-      parameterObject.typeArguments = typeObject.typeArguments;
-    }
-
-    return parameterObject;
-  }
-
-  private declarationIsPrameterDeclaration(declaration: ts.Declaration): declaration is ts.ParameterDeclaration {
-    return declaration.kind === ts.SyntaxKind.Parameter;
-  }
-
-  private declarationIsTypeParameterDeclaration(declaration: ts.Declaration
-  ): declaration is ts.TypeParameterDeclaration {
-    return declaration.kind === ts.SyntaxKind.TypeParameter;
-  }
-
-  private getTypeDescription(type?: ts.Node): TypeArgument {
-    const typeObject: TypeArgument = {};
-
-    if (!type) {
-      return typeObject;
-    }
-
-    if (this.typeIsUnionType(type)) {
-      typeObject.type = "union";
-      typeObject.typeArguments = type.types.map((subType: ts.TypeNode) => {
-        return this.getTypeDescription(subType);
-      });
-    } else if (this.typeIsIntersectionType(type)) {
-      typeObject.type = "intersection";
-      typeObject.typeArguments = type.types.map((subType: ts.TypeNode) => {
-        return this.getTypeDescription(subType);
-      });
-    } else if (this.typeIsTypeReference(type)) {
-      const typeName = type.typeName.getText();
-      if (typeName === "Promise") {
-        return this.getTypeDescription(type.typeArguments![0]);
-      }
-      if (typeName === "Date") {
-        typeObject.type = "string";
-        typeObject.format = "date-time";
-        return typeObject;
-      }
-      typeObject.type = { $ref: `#/definitions/${typeName}` };
-      if (type.typeArguments && type.typeArguments.length > 0) {
-        typeObject.typeArguments = type.typeArguments.map((typeArgument: ts.TypeNode) => {
-          return this.getTypeDescription(typeArgument);
-        });
-      }
-    } else if (type.kind === ts.SyntaxKind.StringKeyword) {
-      typeObject.type = "string";
-    } else if (type.kind === ts.SyntaxKind.NumberKeyword) {
-      typeObject.type = "number";
-    } else if (type.kind === ts.SyntaxKind.BooleanKeyword) {
-      typeObject.type = "boolean";
-    } else if (this.typeIsTypeLiteral(type)) {
-      typeObject.type = "object";
-      typeObject.properties = {};
-      for (const typeMember of type.members) {
-        if (this.typeElementIsPropertySignature(typeMember)) {
-          typeObject.properties[typeMember.name.getText()] = this.getTypeDescription(typeMember.type);
-        }
-      }
-    }
-
-    return typeObject;
-  }
-
-  private typeIsTypeReference(type: ts.Node): type is ts.TypeReferenceNode {
-    return type.kind === ts.SyntaxKind.TypeReference;
-  }
-
-  private typeIsUnionType(type: ts.Node): type is ts.UnionTypeNode {
-    return type.kind === ts.SyntaxKind.UnionType;
-  }
-
-  private typeIsIntersectionType(type: ts.Node): type is ts.IntersectionTypeNode {
-    return type.kind === ts.SyntaxKind.IntersectionType;
-  }
-
-  private typeIsTypeLiteral(type: ts.Node): type is ts.TypeLiteralNode {
-    return type.kind === ts.SyntaxKind.TypeLiteral;
-  }
-
-  private typeElementIsPropertySignature(type: ts.Node): type is ts.PropertySignature {
-    return type.kind === ts.SyntaxKind.PropertySignature;
-  }
+  const schema = tjs.generateSchema(program, '*', settings);
+  const spec = transform(schema);
+  const template = await readFile('template.ts', 'utf-8');
+  return mustache.render(template, spec);
 }

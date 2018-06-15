@@ -1,10 +1,6 @@
-import * as fs from 'mz/fs';
 import { fromPairs, isPlainObject, flatMap, mapValues } from 'lodash';
 import * as toposort from 'toposort';
 
-async function loadJson(path) {
-  return JSON.parse(await fs.readFile(path));
-}
 type Pair = [string, any];
 
 interface TypeDef {
@@ -113,16 +109,3 @@ export function transform(schema): ServiceSpec {
     })),
   };
 }
-
-async function main() {
-  try {
-    const schema = await loadJson('example/schema.json');
-    const spec = transform(schema);
-    console.log(JSON.stringify(spec));
-  } catch (err) {
-    console.error(err);
-    process.exit(1);
-  }
-}
-
-main();

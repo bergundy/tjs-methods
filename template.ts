@@ -21,11 +21,13 @@ import { fromPairs } from 'lodash';
 {{#classes}}
 {{^attributes}}
 export class {{name}}Client {
-  public readonly static methods = [
+  public static readonly methods = [
     {{#methods}}
     '{{name}}',
     {{/methods}}
   ];
+
+  protected readonly schemas: { [method: string]: any };
 
   public constructor(protected readonly serverUrl: string, protected readonly connectTimeout: number = 3.0) {
     this.schemas = fromPairs({{name}}Client.methods.map((m) =>
@@ -62,7 +64,7 @@ import { validate } from '../dist/lib/koaMW';  // TODO: fix import path
 {{^attributes}}
 
 export class {{name}}Server {
-  public readonly static methods = [
+  public static readonly methods = [
     {{#methods}}
     '{{name}}',
     {{/methods}}
@@ -70,8 +72,8 @@ export class {{name}}Server {
 
   protected readonly app: Koa;
   protected readonly router: Router;
+  protected readonly schemas: { [method: string]: any };
 
-  // tslint:disable-next-line:no-shadowed-variable
   public constructor(protected readonly handler: {{name}}, stackTraceInError = false) {
     this.app = new Koa();
     this.router = new Router();
@@ -96,8 +98,8 @@ export class {{name}}Server {
     this.app.use(this.router.allowedMethods());
   }
 
-  public listen(port: number, host: string = 'localhost') {
-    http.createServer(this.app.callback()).listen(port, host);
+  public listen(port: number, host: string = 'localhost'): http.Server {
+    return http.createServer(this.app.callback()).listen(port, host);
   }
 }
 {{/attributes}}
