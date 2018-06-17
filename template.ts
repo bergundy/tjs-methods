@@ -1,4 +1,4 @@
-import { coerceWithSchema } from '../dist/lib/common';  // TODO: fix import path
+import { coerceWithSchema } from '../../dist/lib/common';  // TODO: fix import path
 
 export const schema = {{{schema}}};
 
@@ -58,7 +58,7 @@ import * as Router from 'koa-router';
 import * as http from 'http';
 import * as bodyParser from 'koa-bodyparser';
 import * as errors from 'koa-json-error';
-import { validate } from '../dist/lib/koaMW';  // TODO: fix import path
+import { validate } from '../../dist/lib/koaMW';  // TODO: fix import path
 
 {{#classes}}
 {{^attributes}}
@@ -98,8 +98,11 @@ export class {{name}}Server {
     this.app.use(this.router.allowedMethods());
   }
 
-  public listen(port: number, host: string = 'localhost'): http.Server {
-    return http.createServer(this.app.callback()).listen(port, host);
+  public listen(port: number, host: string = 'localhost'): Promise<http.Server> {
+    return new Promise((resolve, reject) => {
+      const server = http.createServer(this.app.callback()).listen(port, host, () => resolve(server));
+      server.once('error', reject);
+    });
   }
 }
 {{/attributes}}
