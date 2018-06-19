@@ -2,6 +2,14 @@ import { coerceWithSchema } from '../../dist/lib/common';  // TODO: fix import p
 
 export const schema = {{{schema}}};
 
+export class InternalServerError extends Error {
+}
+
+{{#exceptions}}
+export class {{name}} extends Error {
+}
+
+{{/exceptions}}
 {{#classes}}
 export interface {{name}} {
   {{#attributes}}
@@ -36,15 +44,29 @@ export class {{name}}Client {
   {{#methods}}
 
   public async {{name}}({{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}> {
-    const ret = await request.post(`${this.serverUrl}/{{name}}`, {
-      json: true,
-      body: {
-        {{#parameters}}
-        {{name}},
-        {{/parameters}}
+    try {
+      const ret = await request.post(`${this.serverUrl}/{{name}}`, {
+        json: true,
+        body: {
+          {{#parameters}}
+          {{name}},
+          {{/parameters}}
+        }
+      });
+      return coerceWithSchema(this.schemas.{{name}}, ret, schema) as {{returnType}};
+    } catch (err) {
+      const body = err.response.body;
+      if (err.statusCode === 500) {
+        {{#exceptions}}
+        console.error(body.name, '{{name}}');
+        if (body.name === '{{name}}') {
+          throw new {{name}}(body.message);
+        }
+        {{/exceptions}}
+        throw new InternalServerError(body.message);
       }
-    });
-    return coerceWithSchema(this.schemas.{{name}}, ret, schema) as {{returnType}};
+      throw err;
+    }
   }
   {{/methods}}
 }
@@ -87,11 +109,30 @@ export class {{name}}Server {
       const coerced = coerceWithSchema(this.schemas[method], args, schema);
       const order = schema.definitions.{{name}}.properties[method].properties.params.propertyOrder;
       const sortedArgs = Object.entries(coerced).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b)).map(([_, v]) => v);
-      ctx.body = JSON.stringify(await this.handler[method](...sortedArgs));
+      try {
+        ctx.body = JSON.stringify(await this.handler[method](...sortedArgs));
+      } catch (err) {
+        {{#exceptions}}
+        if (err instanceof {{name}}) {
+          ctx.throw(500, 'Internal Server Error', {
+            ...err,
+            knownError: true,
+            name: '{{name}}',
+            message: err.message,
+            stack: stackTraceInError ? err.stack : '',
+          });
+        }
+        {{/exceptions}}
+        throw err;
+      }
     });
 
     this.app.use(errors({
-      postFormat: (e, { stack, ...rest }) => stackTraceInError ? { stack, ...rest } : rest,
+      postFormat: (e, { stack, knownError, name, ...rest }) => {
+        const base = stackTraceInError ? { stack } : {};
+        name = knownError ? name : 'InternalServerError';
+        return { ...base, ...rest, name };
+      },
     }));
     this.app.use(bodyParser());
     this.app.use(this.router.routes());

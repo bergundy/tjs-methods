@@ -2,6 +2,30 @@ import { expect } from 'chai';
 import 'mocha';
 import { transform, typeToString, findRefs } from './transform';
 
+const exceptionSchema = {
+  properties: {
+    message: {
+      type: 'string',
+    },
+    name: {
+      type: 'string',
+    },
+    stack: {
+      type: 'string',
+    },
+  },
+  propertyOrder: [
+    'name',
+    'message',
+    'stack',
+  ],
+  required: [
+    'message',
+    'name',
+  ],
+  type: 'object',
+};
+
 describe('findRefs', () => {
   it('finds all reffed types', () => {
     const result = findRefs({
@@ -74,6 +98,7 @@ describe('transform', () => {
     const result = transform(schema);
     expect(result).to.eql({
       schema: JSON.stringify(schema),
+      exceptions: [],
       classes: [
         {
           name: 'Test',
@@ -95,7 +120,6 @@ describe('transform', () => {
         Test: {
           properties: {
             add: {
-              method: '',
               type: 'object',
               properties: {
                 params: {
@@ -122,6 +146,7 @@ describe('transform', () => {
     const result = transform(schema);
     expect(result).to.eql({
       schema: JSON.stringify(schema),
+      exceptions: [],
       classes: [
         {
           name: 'Test',
@@ -142,6 +167,7 @@ describe('transform', () => {
                 },
               ],
               returnType: 'number',
+              throws: [],
             },
           ],
         },
@@ -202,5 +228,71 @@ describe('transform', () => {
       },
     });
     expect(result.classes.map(({ name }) => name)).to.eql(['C', 'B', 'A']);
+  });
+
+  it('transforms exceptions', () => {
+    const schema = {
+      definitions: {
+        Test: {
+          properties: {
+            add: {
+              type: 'object',
+              properties: {
+                params: {
+                  type: 'object',
+                  properties: {},
+                },
+                returns: {
+                  type: 'integer',
+                },
+                throws: {
+                  $ref: '#/definitions/RuntimeError',
+                },
+              },
+            },
+          },
+        },
+        RuntimeError: exceptionSchema,
+      },
+    };
+    const result = transform(schema);
+    expect(result).to.eql({
+      schema: JSON.stringify(schema),
+      exceptions: [
+        {
+          name: 'RuntimeError',
+          attributes: [
+            {
+              name: 'message',
+              type: 'string',
+            },
+            {
+              name: 'name',
+              type: 'string',
+            },
+            {
+              name: 'stack',
+              type: 'string',
+            },
+          ],
+          methods: [],
+        },
+      ],
+      classes: [
+        {
+          name: 'Test',
+          attributes: [],
+          methods: [
+            {
+              name: 'add',
+              parameters: [
+              ],
+              returnType: 'number',
+              throws: ['RuntimeError'],
+            },
+          ],
+        },
+      ],
+    });
   });
 });

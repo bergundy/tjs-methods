@@ -1,4 +1,5 @@
 import { expect } from 'chai';
+import 'chai-as-promised';
 import 'mocha';
 import { tmpdir } from 'os';
 import { promisify } from 'util';
@@ -64,7 +65,10 @@ main().catch((err) => {
     await writeFile(path.join(this.dir, 'main.ts'), this.main);
     await writeFile(path.join(this.dir, 'handler.ts'), this.handler);
     await writeFile(path.join(this.dir, 'test.ts'), `
-import { expect } from 'chai';
+import { expect, use } from 'chai';
+import * as chaiAsPromised from 'chai-as-promised';
+
+use(chaiAsPromised);
 ${this.test}`);
   }
 
@@ -175,6 +179,42 @@ import { TestClient } from './rpc';
 export default async function test(client: TestClient) {
  const d = new Date();
  expect(await client.dateIncrement(d)).to.eql(new Date(d.getTime() + 1));
+}
+`;
+    await new TestCase(schema, handler, test).run();
+  });
+
+  it('constructs Error classes from and only from declared errors', async () => {
+    const schema = `
+export class RuntimeError extends Error {}
+
+export interface Test {
+  raise: {
+    params: {
+      exc: string;
+    };
+    returns: null;
+    throws: RuntimeError;
+  };
+}`;
+    const handler = `
+import { RuntimeError } from './rpc';
+
+export default class Handler {
+  public async raise(exc: string): Promise<undefined> {
+    if (exc === 'RuntimeError') {
+      throw new RuntimeError('heh');
+    }
+    throw new Error('ho');
+  }
+}
+`;
+    const test = `
+import { TestClient, RuntimeError, InternalServerError } from './rpc';
+
+export default async function test(client: TestClient) {
+  await expect(client.raise('RuntimeError')).to.eventually.be.rejectedWith(RuntimeError, 'heh');
+  await expect(client.raise('UnknownError')).to.eventually.be.rejectedWith(InternalServerError);
 }
 `;
     await new TestCase(schema, handler, test).run();

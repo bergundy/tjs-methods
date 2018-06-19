@@ -3,6 +3,8 @@ export interface User {
   createdAt: Date;
 }
 
+export class AuthenticationError extends Error {}
+export class InvalidNameError extends Error {}
 export type integer = number;
 
 export interface Example {
@@ -18,6 +20,7 @@ export interface Example {
     params: {
       name: string;
     };
+    throws: AuthenticationError | InvalidNameError,
     returns: User;
   };
 

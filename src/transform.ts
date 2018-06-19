@@ -1,4 +1,4 @@
-import { fromPairs, isPlainObject, flatMap, mapValues } from 'lodash';
+import { fromPairs, isPlainObject, flatMap, mapValues, partition } from 'lodash';
 import * as toposort from 'toposort';
 
 type Pair = [string, any];
@@ -35,18 +35,22 @@ export interface Method {
   name: string;
   parameters: Parameter[];
   returnType: string;
+  throws: string[];
+}
+
+export interface ClassSpec {
+    name: string;
+    attributes: Array<{
+      name: string;
+      type: string;
+    }>;
+    methods: Method[];
 }
 
 export interface ServiceSpec {
   schema: string;
-  classes: Array<{
-    name: string,
-    attributes: Array<{
-      name: string,
-      type: string,
-    }>,
-    methods: Method[],
-  }>;
+  classes: ClassSpec[];
+  exceptions: ClassSpec[];
 }
 
 export function findRefs(definition): string[] {
@@ -70,42 +74,59 @@ export function sortDefinitions(definitions): Pair[] {
   return Object.entries(definitions).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b));
 }
 
-function isMethod(m) {
+function isMethod(m): boolean {
   return m && m.properties && m.properties.params && m.properties.returns;
+}
+
+function isString(p): boolean {
+  return p && p.type === 'string';
+}
+
+function isException(s): boolean {
+  const props = s && s.properties;
+  return ['name', 'message', 'stack'].every((p) => isString(props[p]));
+}
+
+export function transformClassPair([className, { properties }]: Pair): ClassSpec {
+  return {
+    name: className,
+    methods: Object.entries(properties)
+    .filter(([_, method]: Pair) => isMethod(method))
+    .map(([methodName, method]: Pair): Method => {
+      const params = Object.entries(method.properties.params.properties);
+      const order = method.properties.params.propertyOrder;
+      return {
+        name: methodName,
+        parameters: params
+        .sort(([n1], [n2]) => order.indexOf(n1) - order.indexOf(n2))
+        .map(([paramName, param], i) => ({
+          name: paramName,
+          type: typeToString(param as TypeDef),
+          last: i === params.length - 1,
+        })),
+        returnType: typeToString(method.properties.returns),
+        throws: method.properties.throws ? [typeToString(method.properties.throws)] : [],
+      };
+    }),
+    attributes: Object.entries(properties)
+    .filter(([_, method]: Pair) => !isMethod(method))
+    .map(([attrName, attrDef]: Pair) => ({
+      name: attrName,
+      type: typeToString(attrDef),
+    })),
+  };
 }
 
 export function transform(schema): ServiceSpec {
   const { definitions } = schema;
   const sortedDefinitions = sortDefinitions(definitions);
+  const classDefinitions = sortedDefinitions.filter(([_, { properties }]: Pair) => properties);
+  const [exceptions, classes] = partition(classDefinitions, ([_, s]) => isException(s));
+  // console.log('CCC', classes);
+  // console.log('EEE', exceptions);
   return {
     schema: JSON.stringify(schema),
-    classes: sortedDefinitions
-    .filter(([_, { properties }]: Pair) => properties)
-    .map(([className, { properties }]: Pair) => ({
-      name: className,
-      methods: Object.entries(properties)
-      .filter(([_, method]: Pair) => isMethod(method))
-      .map(([methodName, method]: Pair): Method => {
-        const params = Object.entries(method.properties.params.properties);
-        const order = method.properties.params.propertyOrder;
-        return {
-          name: methodName,
-          parameters: params
-          .sort(([n1], [n2]) => order.indexOf(n1) - order.indexOf(n2))
-          .map(([paramName, param], i) => ({
-            name: paramName,
-            type: typeToString(param as TypeDef),
-            last: i === params.length - 1,
-          })),
-          returnType: typeToString(method.properties.returns),
-        };
-      }),
-      attributes: Object.entries(properties)
-      .filter(([_, method]: Pair) => !isMethod(method))
-      .map(([attrName, attrDef]: Pair) => ({
-        name: attrName,
-        type: typeToString(attrDef),
-      })),
-    })),
+    classes: classes.map(transformClassPair),
+    exceptions: exceptions.map(transformClassPair),
   };
 }
