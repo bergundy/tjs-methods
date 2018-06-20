@@ -93,6 +93,19 @@ describe('typeToString', () => {
     });
     expect(result).to.equal('string | User');
   });
+  it('transforms anyOf into ampersand separated string', () => {
+    const result = typeToString({
+      allOf: [
+        {
+          $ref: '#/definitions/User',
+        },
+        {
+          $ref: '#/definitions/Abuser',
+        },
+      ],
+    });
+    expect(result).to.equal('User & Abuser');
+  });
 
 });
 

@@ -8,9 +8,10 @@ interface TypeDef {
   format?: string;
   $ref?: string;
   anyOf?: TypeDef[];
+  allOf?: TypeDef[];
 }
 
-export function typeToString({ type, format, $ref, anyOf }: TypeDef): string {
+export function typeToString({ type, format, $ref, anyOf, allOf }: TypeDef): string {
   if (typeof type === 'string') {
     if (type === 'integer') {
       return 'number';
@@ -25,6 +26,9 @@ export function typeToString({ type, format, $ref, anyOf }: TypeDef): string {
   }
   if (Array.isArray(anyOf)) {
     return anyOf.map(typeToString).join(' | ');
+  }
+  if (Array.isArray(allOf)) {
+    return allOf.map(typeToString).join(' & ');
   }
   throw new Error('Could not determine type');
 }
