@@ -10,13 +10,23 @@ interface TypeDef {
   anyOf?: TypeDef[];
   allOf?: TypeDef[];
   properties?: { [name: string]: TypeDef };
+  items?: TypeDef | TypeDef[];
 }
 
-export function typeToString({ type, format, $ref, anyOf, allOf, properties }: TypeDef): string {
+export function typeToString({ type, format, $ref, anyOf, allOf, properties, items }: TypeDef): string {
   if (typeof type === 'string') {
     if (type === 'object') {
       const propString = Object.entries(properties!).map(([n, p]) => `${n}: ${typeToString(p)};`).join(' ');
       return `{ ${propString} }`;
+    }
+    if (type === 'array') {
+      if (Array.isArray(items)) {
+        return `[${items.map(typeToString).join(', ')}]`;
+      } else if (isPlainObject(items)) {
+        return `${typeToString(items!)}[]`;
+      } else {
+        throw new Error(`Invalid type for items: ${items}`);
+      }
     }
     if (type === 'integer') {
       return 'number';

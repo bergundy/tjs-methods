@@ -1,4 +1,3 @@
-* Support complex types: `array`
 * Support custom exception attributes
 * Include HTTP error in client exception
 * Support advanced object schema: `propOrder`, `additionalProperties`

@@ -121,6 +121,30 @@ describe('typeToString', () => {
     });
     expect(result).to.equal('{ user: User; created: Date; }');
   });
+  it('transforms array with items as object into TS interface', () => {
+    const result = typeToString({
+      type: 'array',
+      items: {
+        $ref: '#/definitions/User',
+      },
+    });
+    expect(result).to.equal('User[]');
+  });
+  it('transforms array with items as array into TS interface', () => {
+    const result = typeToString({
+      type: 'array',
+      items: [
+        {
+          $ref: '#/definitions/User',
+        },
+        {
+          type: 'string',
+          format: 'date-time',
+        },
+      ],
+    });
+    expect(result).to.equal('[User, Date]');
+  });
 });
 
 describe('transform', () => {
