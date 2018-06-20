@@ -1,4 +1,3 @@
-* Support complex types: `object`, `array`, `anyOf`, `allOf`
+* Support complex types: `object`, `array`, `allOf`
 * Support custom exception attributes
-* Support multiple exceptions
 * Include HTTP error in client exception

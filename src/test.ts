@@ -80,6 +80,20 @@ describe('typeToString', () => {
     const result = typeToString({ type: 'string', format: 'date-time' });
     expect(result).to.equal('Date');
   });
+  it('transforms anyOf into pipe separated string', () => {
+    const result = typeToString({
+      anyOf: [
+        {
+          type: 'string',
+        },
+        {
+          $ref: '#/definitions/User',
+        },
+      ],
+    });
+    expect(result).to.equal('string | User');
+  });
+
 });
 
 describe('transform', () => {

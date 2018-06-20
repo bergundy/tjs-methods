@@ -7,9 +7,10 @@ interface TypeDef {
   type?: string;
   format?: string;
   $ref?: string;
+  anyOf?: TypeDef[];
 }
 
-export function typeToString({ type, format, $ref }: TypeDef): string {
+export function typeToString({ type, format, $ref, anyOf }: TypeDef): string {
   if (typeof type === 'string') {
     if (type === 'integer') {
       return 'number';
@@ -21,6 +22,9 @@ export function typeToString({ type, format, $ref }: TypeDef): string {
   }
   if (typeof $ref === 'string') {
     return $ref.replace(/#\/definitions\//, '');
+  }
+  if (Array.isArray(anyOf)) {
+    return anyOf.map(typeToString).join(' | ');
   }
   throw new Error('Could not determine type');
 }
@@ -105,7 +109,7 @@ export function transformClassPair([className, { properties }]: Pair): ClassSpec
           last: i === params.length - 1,
         })),
         returnType: typeToString(method.properties.returns),
-        throws: method.properties.throws ? [typeToString(method.properties.throws)] : [],
+        throws: method.properties.throws ? typeToString(method.properties.throws).split(' | ') : [],
       };
     }),
     attributes: Object.entries(properties)

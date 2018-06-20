@@ -219,4 +219,45 @@ export default async function test(client: TestClient) {
 `;
     await new TestCase(schema, handler, test).run();
   });
+
+  it('constructs Error classes from and only from declared errors when multiple errors possible', async () => {
+    const schema = `
+export class RuntimeError extends Error {}
+export class WalktimeError extends Error {}
+
+export interface Test {
+  raise: {
+    params: {
+      exc: string;
+    };
+    returns: null;
+    throws: RuntimeError | WalktimeError;
+  };
+}`;
+    const handler = `
+import { RuntimeError, WalktimeError } from './rpc';
+
+export default class Handler {
+  public async raise(exc: string): Promise<undefined> {
+    if (exc === 'RuntimeError') {
+      throw new RuntimeError('heh');
+    }
+    if (exc === 'WalktimeError') {
+      throw new WalktimeError('hoh');
+    }
+    throw new Error('ho');
+  }
+}
+`;
+    const test = `
+import { TestClient, RuntimeError, WalktimeError, InternalServerError } from './rpc';
+
+export default async function test(client: TestClient) {
+  await expect(client.raise('RuntimeError')).to.eventually.be.rejectedWith(RuntimeError, 'heh');
+  await expect(client.raise('WalktimeError')).to.eventually.be.rejectedWith(WalktimeError, 'hoh');
+  await expect(client.raise('UnknownError')).to.eventually.be.rejectedWith(InternalServerError);
+}
+`;
+    await new TestCase(schema, handler, test).run();
+  });
 });
