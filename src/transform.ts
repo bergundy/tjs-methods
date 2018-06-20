@@ -9,10 +9,15 @@ interface TypeDef {
   $ref?: string;
   anyOf?: TypeDef[];
   allOf?: TypeDef[];
+  properties?: { [name: string]: TypeDef };
 }
 
-export function typeToString({ type, format, $ref, anyOf, allOf }: TypeDef): string {
+export function typeToString({ type, format, $ref, anyOf, allOf, properties }: TypeDef): string {
   if (typeof type === 'string') {
+    if (type === 'object') {
+      const propString = Object.entries(properties!).map(([n, p]) => `${n}: ${typeToString(p)};`).join(' ');
+      return `{ ${propString} }`;
+    }
     if (type === 'integer') {
       return 'number';
     }

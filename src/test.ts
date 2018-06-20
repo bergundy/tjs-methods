@@ -106,7 +106,21 @@ describe('typeToString', () => {
     });
     expect(result).to.equal('User & Abuser');
   });
-
+  it('transforms object into TS interface', () => {
+    const result = typeToString({
+      type: 'object',
+      properties: {
+        user: {
+          $ref: '#/definitions/User',
+        },
+        created: {
+          type: 'string',
+          format: 'date-time',
+        },
+      },
+    });
+    expect(result).to.equal('{ user: User; created: Date; }');
+  });
 });
 
 describe('transform', () => {
