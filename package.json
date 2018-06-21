@@ -1,7 +1,7 @@
 {
-  "name": "tjs-methods",
+  "name": "launch",
   "version": "0.0.1",
-  "description": "Methods plugin for typescript-json-schema",
+  "description": "transforms a Typescript interface into usable client / server code",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
