@@ -1,86 +1,21 @@
-import { coerceWithSchema } from '../../dist/lib/common';  // TODO: fix import path
-
-export const schema = {{{schema}}};
-
-export class InternalServerError extends Error {
-}
-
-{{#exceptions}}
-export class {{name}} extends Error {
-}
-
-{{/exceptions}}
-{{#classes}}
-export interface {{name}} {
-  {{#attributes}}
-  readonly {{name}}: {{type}};
-  {{/attributes}}
-  {{#methods}}
-  {{name}}({{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}>;
-  {{/methods}}
-}
-
-{{/classes}}
-
-// Client code
-import * as request from 'request-promise-native';
-import { fromPairs } from 'lodash';
-
-{{#classes}}
-{{^attributes}}
-export class {{name}}Client {
-  public static readonly methods = [
-    {{#methods}}
-    '{{name}}',
-    {{/methods}}
-  ];
-
-  protected readonly schemas: { [method: string]: any };
-
-  public constructor(protected readonly serverUrl: string, protected readonly connectTimeout: number = 3.0) {
-    this.schemas = fromPairs({{name}}Client.methods.map((m) =>
-      [m, schema.definitions.{{name}}.properties[m].properties.returns, schema]));
-  }
-  {{#methods}}
-
-  public async {{name}}({{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}> {
-    try {
-      const ret = await request.post(`${this.serverUrl}/{{name}}`, {
-        json: true,
-        body: {
-          {{#parameters}}
-          {{name}},
-          {{/parameters}}
-        }
-      });
-      return coerceWithSchema(this.schemas.{{name}}, ret, schema) as {{returnType}};
-    } catch (err) {
-      const body = err.response.body;
-      if (err.statusCode === 500) {
-        {{#exceptions}}
-        console.error(body.name, '{{name}}');
-        if (body.name === '{{name}}') {
-          throw new {{name}}(body.message);
-        }
-        {{/exceptions}}
-        throw new InternalServerError(body.message);
-      }
-      throw err;
-    }
-  }
-  {{/methods}}
-}
-{{/attributes}}
-
-{{/classes}}
-
-// Server Code
 import * as Koa from 'koa';
 import * as Router from 'koa-router';
 import * as http from 'http';
 import * as bodyParser from 'koa-bodyparser';
 import * as errors from 'koa-json-error';
-import { validate } from '../../dist/lib/koaMW';  // TODO: fix import path
+import { fromPairs } from 'lodash';
+import { validate } from './koaMW';
+import { coerceWithSchema } from './common';
+import {
+  schema,
+  InternalServerError,
+  {{#exceptions}}
+  {{name}},
+  {{/exceptions}}
+  {{#classes}}
+  {{name}},
+  {{/classes}}
+} from './interfaces';
 
 {{#classes}}
 {{^attributes}}

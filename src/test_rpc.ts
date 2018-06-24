@@ -34,7 +34,8 @@ class TestCase {
   ) {
     this.main = `
 import { AddressInfo } from 'net';
-import { TestServer, TestClient } from './rpc';
+import { TestServer } from './server';
+import { TestClient } from './client';
 import Handler from './handler';
 import test from './test';
 
@@ -61,7 +62,9 @@ main().catch((err) => {
     const schemaPath = path.join(this.dir, 'schema.ts');
     await writeFile(schemaPath, this.schema);
     const schemaCode = await generate(schemaPath);
-    await writeFile(path.join(this.dir, 'rpc.ts'), schemaCode);
+    await Promise.all(Object.entries(schemaCode).map(
+      ([n, c]) => writeFile(path.join(this.dir, n), c)
+    ));
     await writeFile(path.join(this.dir, 'main.ts'), this.main);
     await writeFile(path.join(this.dir, 'handler.ts'), this.handler);
     await writeFile(path.join(this.dir, 'test.ts'), `
@@ -114,7 +117,7 @@ export default class Handler {
 }
 `;
     const test = `
-import { TestClient } from './rpc';
+import { TestClient } from './client';
 
 export default async function test(client: TestClient) {
  expect(await client.bar(3)).to.equal('3');
@@ -138,7 +141,7 @@ export interface Test {
   };
 }`;
     const handler = `
-import { User } from './rpc';
+import { User } from './interfaces';
 
 export default class Handler {
   public async authenticate(token: string): Promise<User> {
@@ -147,7 +150,7 @@ export default class Handler {
 }
 `;
     const test = `
-import { TestClient } from './rpc';
+import { TestClient } from './client';
 
 export default async function test(client: TestClient) {
  expect(await client.authenticate('token')).to.eql({ name: 'Vova' });
@@ -174,7 +177,7 @@ export default class Handler {
 }
 `;
     const test = `
-import { TestClient } from './rpc';
+import { TestClient } from './client';
 
 export default async function test(client: TestClient) {
  const d = new Date();
@@ -198,7 +201,7 @@ export interface Test {
   };
 }`;
     const handler = `
-import { RuntimeError } from './rpc';
+import { RuntimeError } from './interfaces';
 
 export default class Handler {
   public async raise(exc: string): Promise<undefined> {
@@ -210,7 +213,8 @@ export default class Handler {
 }
 `;
     const test = `
-import { TestClient, RuntimeError, InternalServerError } from './rpc';
+import { RuntimeError, InternalServerError } from './interfaces';
+import { TestClient } from './client';
 
 export default async function test(client: TestClient) {
   await expect(client.raise('RuntimeError')).to.eventually.be.rejectedWith(RuntimeError, 'heh');
@@ -235,7 +239,7 @@ export interface Test {
   };
 }`;
     const handler = `
-import { RuntimeError, WalktimeError } from './rpc';
+import { RuntimeError, WalktimeError } from './interfaces';
 
 export default class Handler {
   public async raise(exc: string): Promise<undefined> {
@@ -250,7 +254,8 @@ export default class Handler {
 }
 `;
     const test = `
-import { TestClient, RuntimeError, WalktimeError, InternalServerError } from './rpc';
+import { RuntimeError, WalktimeError, InternalServerError } from './interfaces';
+import { TestClient } from './client';
 
 export default async function test(client: TestClient) {
   await expect(client.raise('RuntimeError')).to.eventually.be.rejectedWith(RuntimeError, 'heh');

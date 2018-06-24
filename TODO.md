@@ -7,4 +7,3 @@
 * Support streamed responses
 * Add binaris function template
 * Add docs template
-* Generate 3 files instead of 1: `client.ts`, `server.ts`, `interfaces.ts`

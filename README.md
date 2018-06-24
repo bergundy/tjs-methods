@@ -25,13 +25,13 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
     ```
 1. Compile the schema.
     ```bash
-    launch interface.ts -o ./generated
+    mkdir -p ./generated && launch interface.ts -o ./generated
     ```
 1. Write the server code.
 
     *`server.ts`*
     ```typescript
-    import { ExampleServer } from './generated/server.ts';
+    import { ExampleServer } from './generated/server';
 
     class Handler {
       public async add(a: number, b: number): Promise<number> {
@@ -48,7 +48,7 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
 
     *`client.ts`*
     ```typescript
-    import { ExampleClient } from './generated/client.ts';
+    import { ExampleClient } from './generated/client';
 
     async function main() {
       const client = new ExampleClient('http://localhost:8080');
@@ -61,6 +61,10 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
     }
 
     main();
+    ```
+1. Install the dependencies
+    ```bash
+    cat example/{clientDeps,serverDeps} | sort -u | xargs npm i
     ```
 1. Run (make sure `tsconfig.json` is properly configured for node and is present in the current directory)
     ```bash
