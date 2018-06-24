@@ -1,4 +1,3 @@
-* Install the CLI into `bin` on npm install.
 * Support custom exception attributes
 * Include HTTP error in client exception
 * Support advanced object schema: `propOrder`, `additionalProperties`

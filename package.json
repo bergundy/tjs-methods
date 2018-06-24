@@ -7,6 +7,9 @@
     "build": "tsc",
     "test": "mocha --harmony_async_iteration --full-trace --timeout 10000 dist/test*.js dist/**/test*.js"
   },
+  "bin": {
+    "launch": "./bin/launch"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/bergundy/tjs-methods.git"

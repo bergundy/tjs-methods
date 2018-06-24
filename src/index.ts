@@ -3,6 +3,7 @@ import * as glob from 'glob';
 import * as tjs from 'typescript-json-schema';
 import * as mustache from 'mustache';
 import { promisify } from 'util';
+import * as path from 'path';
 import { transform } from './transform';
 
 export async function generate(filePattern: string): Promise<string> {
@@ -21,6 +22,6 @@ export async function generate(filePattern: string): Promise<string> {
 
   const schema = tjs.generateSchema(program, '*', settings);
   const spec = transform(schema);
-  const template = await readFile('template.ts', 'utf-8');
+  const template = await readFile(path.join(__dirname, '..', 'template.ts'), 'utf-8');
   return mustache.render(template, spec);
 }
