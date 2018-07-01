@@ -74,6 +74,7 @@ export interface ServiceSpec {
   schema: string;
   classes: ClassSpec[];
   exceptions: ClassSpec[];
+  context?: ClassSpec;
 }
 
 export function findRefs(definition): string[] {
@@ -144,12 +145,14 @@ export function transform(schema): ServiceSpec {
   const { definitions } = schema;
   const sortedDefinitions = sortDefinitions(definitions);
   const classDefinitions = sortedDefinitions.filter(([_, { properties }]: Pair) => properties);
-  const [exceptions, classes] = partition(classDefinitions, ([_, s]) => isException(s));
-  // console.log('CCC', classes);
-  // console.log('EEE', exceptions);
+  const [exceptionsWithName, classesWithName] = partition(classDefinitions, ([_, s]) => isException(s));
+  const exceptions = exceptionsWithName.map(transformClassPair);
+  const classes = classesWithName.map(transformClassPair);
+  const context = classes.find(({ name }) => name === 'Context');
   return {
     schema: JSON.stringify(schema),
-    classes: classes.map(transformClassPair),
-    exceptions: exceptions.map(transformClassPair),
+    classes,
+    exceptions,
+    context,
   };
 }

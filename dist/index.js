@@ -28,7 +28,8 @@ async function generate(filePattern) {
     const libFiles = await getLib();
     const libContents = await Promise.all(libFiles.map((n) => fs_1.readFile(path.join(libPath, n), 'utf-8')));
     const program = tjs.getProgramFromFiles(paths, compilerOptions);
-    const schema = tjs.generateSchema(program, '*', settings);
+    const generator = tjs.buildGenerator(program, settings, paths);
+    const schema = tjs.generateSchema(program, '*', settings, paths);
     const spec = transform_1.transform(schema);
     const genFiles = names.map((n) => `${n}.ts`);
     const templates = await Promise.all(genFiles.map((n) => fs_1.readFile(tmplPath(n), 'utf-8')));

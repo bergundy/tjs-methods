@@ -172,6 +172,7 @@ describe('transform', () => {
                     methods: [],
                 },
             ],
+            context: undefined,
         });
     });
     it('transforms a simple class with single method', () => {
@@ -232,6 +233,7 @@ describe('transform', () => {
                     ],
                 },
             ],
+            context: undefined,
         });
     });
     it('sorts output class by checking references', () => {
@@ -350,6 +352,30 @@ describe('transform', () => {
                     ],
                 },
             ],
+            context: undefined,
+        });
+    });
+    it('returns a context class when given a Context interface', () => {
+        const result = transform_1.transform({
+            definitions: {
+                Context: {
+                    properties: {
+                        foo: {
+                            type: 'string',
+                        },
+                    },
+                },
+            },
+        });
+        chai_1.expect(result.context).to.eql({
+            name: 'Context',
+            attributes: [
+                {
+                    name: 'foo',
+                    type: 'string',
+                },
+            ],
+            methods: [],
         });
     });
 });

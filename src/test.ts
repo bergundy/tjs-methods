@@ -176,6 +176,7 @@ describe('transform', () => {
           methods: [],
         },
       ],
+      context: undefined,
     });
   });
 
@@ -237,6 +238,7 @@ describe('transform', () => {
           ],
         },
       ],
+      context: undefined,
     });
   });
 
@@ -358,6 +360,32 @@ describe('transform', () => {
           ],
         },
       ],
+      context: undefined,
     });
   });
+
+  it('returns a context class when given a Context interface', () => {
+    const result = transform({
+      definitions: {
+        Context: {
+          properties: {
+            foo: {
+              type: 'string',
+            },
+          },
+        },
+      },
+    });
+    expect(result.context).to.eql({
+      name: 'Context',
+      attributes: [
+        {
+          name: 'foo',
+          type: 'string',
+        },
+      ],
+      methods: [],
+    });
+  });
+
 });

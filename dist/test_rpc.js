@@ -265,5 +265,43 @@ export default async function test(client: TestClient) {
 `;
         await new TestCase(schema, handler, test).run();
     });
+    it('supports the Context interface', async () => {
+        const schema = `
+export interface Context {
+  ip: string;
+}
+
+export interface Test {
+  hello: {
+    params: {
+      name: string;
+    };
+    returns: string;
+  };
+}`;
+        const handler = `
+import * as koa from 'koa';
+import { Context } from './interfaces';
+
+export default class Handler {
+  public async extractContext(_: koa.Context): Promise<Context> {
+    return { ip: 'test' };
+  }
+
+  public async hello({ ip }: Context, name: string): Promise<string> {
+    return 'Hello, ' + name + ' from ' + ip;
+  }
+}
+`;
+        const test = `
+import { TestClient } from './client';
+
+export default async function test(client: TestClient) {
+  const result = await client.hello('vova');
+  expect(result).to.equal('Hello, vova from test');
+}
+`;
+        await new TestCase(schema, handler, test).run();
+    });
 });
 //# sourceMappingURL=test_rpc.js.map

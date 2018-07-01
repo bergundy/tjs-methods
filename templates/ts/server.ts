@@ -19,6 +19,15 @@ import {
 
 {{#classes}}
 {{^attributes}}
+export interface {{name}}Handler {
+  {{#attributes}}
+  readonly {{name}}: {{type}};
+  {{/attributes}}
+  {{#context}}extractContext(ctx: koa.Context): Promise<Context>;{{/context}}
+  {{#methods}}
+  {{name}}({{#context}}ctx: Context, {{/context}}{{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}>;
+  {{/methods}}
+}
 
 export class {{name}}Server {
   public static readonly methods = [
@@ -31,7 +40,7 @@ export class {{name}}Server {
   protected readonly router: Router;
   protected readonly schemas: { [method: string]: any };
 
-  public constructor(protected readonly handler: {{name}}, stackTraceInError = false) {
+  public constructor(protected readonly handler: {{name}}Handler, stackTraceInError = false) {
     this.app = new Koa();
     this.router = new Router();
     this.schemas = fromPairs({{name}}Server.methods.map((m) =>
@@ -45,7 +54,7 @@ export class {{name}}Server {
       const order = schema.definitions.{{name}}.properties[method].properties.params.propertyOrder;
       const sortedArgs = Object.entries(coerced).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b)).map(([_, v]) => v);
       try {
-        ctx.body = JSON.stringify(await this.handler[method](...sortedArgs));
+        ctx.body = JSON.stringify(await this.handler[method]({{#context}}await this.handler.extractContext(ctx), {{/context}}...sortedArgs));
       } catch (err) {
         {{#exceptions}}
         if (err instanceof {{name}}) {

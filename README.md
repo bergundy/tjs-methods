@@ -104,6 +104,48 @@ export interface Example {
 }
 ```
 
+### Context
+Some uses require context to be passed on to handlers (i.e. for authentication / extracting the request IP).
+Adding a `Context` interface to the schema will cause the framework to prepend it as the first param to method signatures, servers will accept a function that accepts a request object (depends on the runtime) and returns a context object to be passed to methods.
+
+*`interface.ts`*
+```typescript
+export interface Context {
+  ip: string;
+}
+
+export interface Example {
+  hello: {
+    params: {
+      name: string;
+    };
+    returns: integer;
+  };
+}
+```
+
+*`server.ts`*
+```typescript
+import * as koa from 'koa';
+import { Context } from './generated/interfaces';
+import { ExampleServer } from './generated/server';
+
+export class Handler {
+  public async extractContext({ ip }: koa.Context): Promise<Context> {
+    return { ip };
+  }
+
+  public async hello({ ip }: Context, name: string): Promise<string> {
+    return `Hello, ${name} from ${ip}!`;
+  }
+}
+
+const h = new Handler();
+
+const server = new ExampleServer(h);
+server.listen(8080);
+```
+
 ### Exceptions # TODO
 
 ### JSON Schema attributes

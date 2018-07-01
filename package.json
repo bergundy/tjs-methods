@@ -57,7 +57,7 @@
     "request-promise-native": "^1.0.5",
     "rimraf": "^2.6.2",
     "toposort": "^2.0.2",
-    "typescript-json-schema": "^0.24.1",
+    "typescript-json-schema": "git+https://github.com/bergundy/typescript-json-schema.git#include-files",
     "yargs": "^11.0.0"
   }
 }

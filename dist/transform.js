@@ -102,13 +102,15 @@ function transform(schema) {
     const { definitions } = schema;
     const sortedDefinitions = sortDefinitions(definitions);
     const classDefinitions = sortedDefinitions.filter(([_, { properties }]) => properties);
-    const [exceptions, classes] = lodash_1.partition(classDefinitions, ([_, s]) => isException(s));
-    // console.log('CCC', classes);
-    // console.log('EEE', exceptions);
+    const [exceptionsWithName, classesWithName] = lodash_1.partition(classDefinitions, ([_, s]) => isException(s));
+    const exceptions = exceptionsWithName.map(transformClassPair);
+    const classes = classesWithName.map(transformClassPair);
+    const context = classes.find(({ name }) => name === 'Context');
     return {
         schema: JSON.stringify(schema),
-        classes: classes.map(transformClassPair),
-        exceptions: exceptions.map(transformClassPair),
+        classes,
+        exceptions,
+        context,
     };
 }
 exports.transform = transform;
