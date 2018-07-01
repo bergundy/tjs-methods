@@ -1,6 +1,7 @@
 import { readFile, readdir } from 'mz/fs';
 import { zip, fromPairs } from 'lodash';
 import * as glob from 'glob';
+import * as ts from 'typescript';
 import * as tjs from 'typescript-json-schema';
 import * as mustache from 'mustache';
 import { promisify } from 'util';
@@ -33,12 +34,18 @@ export async function generate(filePattern: string): Promise<GeneratedCode> {
 
   const compilerOptions: tjs.CompilerOptions = {
     strictNullChecks: true,
+    target: ts.ScriptTarget.ESNext,
+    noEmit: true,
+    emitDecoratorMetadata: true,
+    experimentalDecorators: true,
+    module: ts.ModuleKind.CommonJS,
+    allowUnusedLabels: true,
   };
 
   const libFiles = await getLib();
   const libContents = await Promise.all(libFiles.map((n) => readFile(path.join(libPath, n), 'utf-8')));
 
-  const program = tjs.getProgramFromFiles(paths, compilerOptions);
+  const program = ts.createProgram(paths, compilerOptions);
   const generator = tjs.buildGenerator(program, settings, paths)!;
   const schema = tjs.generateSchema(program, '*', settings, paths);
   const spec = transform(schema);

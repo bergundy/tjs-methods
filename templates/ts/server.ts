@@ -23,7 +23,7 @@ export interface {{name}}Handler {
   {{#attributes}}
   readonly {{name}}: {{type}};
   {{/attributes}}
-  {{#context}}extractContext(ctx: koa.Context): Promise<Context>;{{/context}}
+  {{#context}}extractContext(ctx: Koa.Context): Promise<Context>;{{/context}}
   {{#methods}}
   {{name}}({{#context}}ctx: Context, {{/context}}{{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}>;
   {{/methods}}

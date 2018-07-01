@@ -2,11 +2,15 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const lodash_1 = require("lodash");
 const toposort = require("toposort");
-function typeToString({ type, format, $ref, anyOf, allOf, properties, items }) {
+function typeToString(def) {
+    const { type, format, $ref, anyOf, allOf, properties, items } = def;
     if (typeof type === 'string') {
         if (type === 'object') {
-            const propString = Object.entries(properties).map(([n, p]) => `${n}: ${typeToString(p)};`).join(' ');
-            return `{ ${propString} }`;
+            if (lodash_1.isPlainObject(properties)) {
+                const propString = Object.entries(properties).map(([n, p]) => `${n}: ${typeToString(p)};`).join(' ');
+                return `{ ${propString} }`;
+            }
+            return '{}';
         }
         if (type === 'array') {
             if (Array.isArray(items)) {
@@ -36,7 +40,9 @@ function typeToString({ type, format, $ref, anyOf, allOf, properties, items }) {
     if (Array.isArray(allOf)) {
         return allOf.map(typeToString).join(' & ');
     }
-    throw new Error('Could not determine type');
+    // tslint:disable-next-line no-console
+    console.error('Could not determine type, defaulting to Object', def);
+    return 'Object';
 }
 exports.typeToString = typeToString;
 function findRefs(definition) {
