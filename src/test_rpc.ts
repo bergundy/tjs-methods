@@ -30,6 +30,7 @@ class TestCase {
     public readonly schema: string,
     public readonly handler: string,
     public readonly test: string,
+    public readonly mw?: string,
     public readonly dir = mktemp()
   ) {
     this.main = `
@@ -37,12 +38,13 @@ import { AddressInfo } from 'net';
 import { TestServer } from './server';
 import { TestClient } from './client';
 import Handler from './handler';
+${this.mw ? "import mw from './mw';" : ''}
 import test from './test';
 
 async function main() {
   const h = new Handler();
 
-  const server = new TestServer(h);
+  const server = new TestServer(h, true${this.mw ? ', [mw]' : ''});
   const listener = await server.listen(0, '127.0.0.1');
   const { address, port } = (listener.address() as AddressInfo);
   const client = new TestClient('http://' + address + ':' + port);
@@ -66,6 +68,9 @@ main().catch((err) => {
       ([n, c]) => writeFile(path.join(this.dir, n), c)
     ));
     await writeFile(path.join(this.dir, 'main.ts'), this.main);
+    if (this.mw) {
+      await writeFile(path.join(this.dir, 'mw.ts'), this.mw);
+    }
     await writeFile(path.join(this.dir, 'handler.ts'), this.handler);
     await writeFile(path.join(this.dir, 'test.ts'), `
 import { expect, use } from 'chai';

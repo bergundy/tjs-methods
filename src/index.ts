@@ -32,7 +32,7 @@ export async function generate(filePattern: string): Promise<GeneratedCode> {
     propOrder: true,
   };
 
-  const compilerOptions: tjs.CompilerOptions = {
+  const compilerOptions: ts.CompilerOptions = {
     strictNullChecks: true,
     target: ts.ScriptTarget.ESNext,
     noEmit: true,

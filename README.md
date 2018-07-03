@@ -146,6 +146,27 @@ const server = new ExampleServer(h);
 server.listen(8080);
 ```
 
+### Mounting the app with a different prefix and adding custom middleware
+*`server.ts`*
+```typescript
+// ...
+import { ExampleRouter } from './generated/server';
+
+// ... implement Handler class ...
+const h = new Handler();
+const router = new ExampleRouter(h);
+const app = new Koa();
+
+const baseRouter = new Router(); // koa-router
+baseRouter.use('/prefix',  routers.routes(),  routers.allowedMethods());
+app.use(baseRouter.routes());
+app.use(async function myCustomMiddleware(ctx: koa.Context, next) {
+  // ... implement middlware ...
+});
+// ... app.listen(), etc ...
+```
+
+
 ### Exceptions # TODO
 
 ### JSON Schema attributes

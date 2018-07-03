@@ -37,22 +37,24 @@ function writeTempFile(contents) {
     });
 }
 class TestCase {
-    constructor(schema, handler, test, dir = mktemp()) {
+    constructor(schema, handler, test, mw, dir = mktemp()) {
         this.schema = schema;
         this.handler = handler;
         this.test = test;
+        this.mw = mw;
         this.dir = dir;
         this.main = `
 import { AddressInfo } from 'net';
 import { TestServer } from './server';
 import { TestClient } from './client';
 import Handler from './handler';
+${this.mw ? "import mw from './mw';" : ''}
 import test from './test';
 
 async function main() {
   const h = new Handler();
 
-  const server = new TestServer(h);
+  const server = new TestServer(h, true${this.mw ? ', [mw]' : ''});
   const listener = await server.listen(0, '127.0.0.1');
   const { address, port } = (listener.address() as AddressInfo);
   const client = new TestClient('http://' + address + ':' + port);
@@ -73,6 +75,9 @@ main().catch((err) => {
         const schemaCode = await index_1.generate(schemaPath);
         await Promise.all(Object.entries(schemaCode).map(([n, c]) => fs_1.writeFile(path.join(this.dir, n), c)));
         await fs_1.writeFile(path.join(this.dir, 'main.ts'), this.main);
+        if (this.mw) {
+            await fs_1.writeFile(path.join(this.dir, 'mw.ts'), this.mw);
+        }
         await fs_1.writeFile(path.join(this.dir, 'handler.ts'), this.handler);
         await fs_1.writeFile(path.join(this.dir, 'test.ts'), `
 import { expect, use } from 'chai';

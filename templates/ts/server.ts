@@ -30,32 +30,49 @@ export interface {{name}}Handler {
   {{/methods}}
 }
 
-export class {{name}}Server {
+export class {{name}}Router {
   public static readonly methods = [
     {{#methods}}
     '{{name}}',
     {{/methods}}
   ];
 
-  protected readonly app: Koa;
-  protected readonly router: Router;
   protected readonly schemas: { [method: string]: any };
+  public readonly koaRouter: Router;
 
-  public constructor(protected readonly handler: {{name}}Handler, stackTraceInError = false) {
-    this.app = new Koa();
-    this.router = new Router();
-    this.schemas = fromPairs({{name}}Server.methods.map((m) =>
+  constructor(
+    protected readonly handler: {{name}}Handler,
+    stackTraceInError = false,
+  ) {
+    this.koaRouter = new Router();
+    this.schemas = fromPairs({{name}}Router.methods.map((m) =>
       [m, schema.definitions.{{name}}.properties[m].properties.params, schema]));
 
-    this.router.post('/:method', validate(schema, '{{name}}'));
-    this.router.post('/:method', async (ctx) => {
+    this.koaRouter.use(errors({
+      postFormat: (e, { stack, knownError, name, ...rest }) => {
+        const base = stackTraceInError ? { stack } : {};
+        name = knownError ? name : 'InternalServerError';
+        return { ...base, ...rest, name };
+      },
+    }));
+    this.koaRouter.use(bodyParser());
+    this.koaRouter.post('/:method', validate(schema, '{{name}}'));
+    this.koaRouter.post('/:method', async (ctx) => {
       const { method } = ctx.params;
       const args = (ctx.request as any).body;
       const coerced = coerceWithSchema(this.schemas[method], args, schema);
       const order = schema.definitions.{{name}}.properties[method].properties.params.propertyOrder;
       const sortedArgs = Object.entries(coerced).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b)).map(([_, v]) => v);
       try {
-        ctx.body = JSON.stringify(await this.handler[method]({{#context}}await this.handler.extractContext(ctx), {{/context}}...sortedArgs));
+        {{#context}}
+        const extractedContext = await this.handler.extractContext(ctx);
+        ctx.extractedContext = extractedContext;
+        ctx.body = JSON.stringify(await this.handler[method](extractedContext, ...sortedArgs));
+        {{/context}}
+        {{^context}}
+        ctx.extractedContext = {};
+        ctx.body = JSON.stringify(await this.handler[method](...sortedArgs));
+        {{/context}}
       } catch (err) {
         {{#exceptions}}
         if (err instanceof {{name}}) {
@@ -71,17 +88,22 @@ export class {{name}}Server {
         throw err;
       }
     });
+  }
+}
 
-    this.app.use(errors({
-      postFormat: (e, { stack, knownError, name, ...rest }) => {
-        const base = stackTraceInError ? { stack } : {};
-        name = knownError ? name : 'InternalServerError';
-        return { ...base, ...rest, name };
-      },
-    }));
-    this.app.use(bodyParser());
-    this.app.use(this.router.routes());
-    this.app.use(this.router.allowedMethods());
+export class {{name}}Server {
+  protected readonly app: Koa;
+  protected readonly router: {{name}}Router;
+
+  public constructor(
+    protected readonly handler: {{name}}Handler,
+    stackTraceInError = false,
+  ) {
+    this.app = new Koa();
+    this.router = new {{name}}Router(handler, stackTraceInError);
+
+    this.app.use(this.router.koaRouter.routes());
+    this.app.use(this.router.koaRouter.allowedMethods());
   }
 
   public listen(port: number, host: string = 'localhost'): Promise<http.Server> {
