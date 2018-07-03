@@ -1,3 +1,4 @@
+// tslint:disable
 import * as request from 'request-promise-native';
 import { fromPairs } from 'lodash';
 import { coerceWithSchema } from './common';

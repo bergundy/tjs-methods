@@ -1,3 +1,4 @@
+// tslint:disable
 export const schema = {{{schema}}};
 
 export class InternalServerError extends Error {
