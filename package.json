@@ -42,19 +42,19 @@
     "chai-as-promised": "^7.1.1",
     "mocha": "^5.2.0",
     "ts-node": "^6.0.5",
-    "typescript": "^2.8.3"
-  },
-  "dependencies": {
-    "ajv": "^6.5.0",
     "koa": "^2.5.1",
     "koa-bodyparser": "^4.2.1",
     "koa-json-error": "^3.1.2",
     "koa-router": "^7.4.0",
+    "request": "^2.87.0",
+    "request-promise-native": "^1.0.5"
+  },
+  "dependencies": {
+    "typescript": "^2.8.3",
+    "ajv": "^6.5.0",
     "lodash": "^4.17.10",
     "mustache": "^2.3.0",
     "mz": "^2.7.0",
-    "request": "^2.87.0",
-    "request-promise-native": "^1.0.5",
     "rimraf": "^2.6.2",
     "toposort": "^2.0.2",
     "typescript-json-schema": "git+https://github.com/bergundy/typescript-json-schema.git#include-files",
