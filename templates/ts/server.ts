@@ -66,7 +66,7 @@ export class {{name}}Router {
       try {
         {{#context}}
         const extractedContext = await this.handler.extractContext(ctx);
-        ctx.extractedContext = extractedContext;
+        (ctx as any).extractedContext = extractedContext;
         ctx.body = JSON.stringify(await this.handler[method](extractedContext, ...sortedArgs));
         {{/context}}
         {{^context}}
