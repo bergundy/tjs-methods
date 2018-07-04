@@ -44,9 +44,10 @@ export class {{name}}Router {
     protected readonly handler: {{name}}Handler,
     stackTraceInError = false,
   ) {
+    const def = schema.definitions.{{name}};
     this.koaRouter = new Router();
     this.schemas = fromPairs({{name}}Router.methods.map((m) =>
-      [m, schema.definitions.{{name}}.properties[m].properties.params, schema]));
+      [m, def.properties[m].properties.params, schema]));
 
     this.koaRouter.use(errors({
       postFormat: (e, { stack, knownError, name, ...rest }) => {
@@ -57,38 +58,41 @@ export class {{name}}Router {
     }));
     this.koaRouter.use(bodyParser());
     this.koaRouter.post('/:method', validate(schema, '{{name}}'));
-    this.koaRouter.post('/:method', async (ctx) => {
-      const { method } = ctx.params;
+
+    {{#methods}}
+    this.koaRouter.post('/{{name}}', async (ctx) => {
       const args = (ctx.request as any).body;
-      const coerced = coerceWithSchema(this.schemas[method], args, schema);
-      const order = schema.definitions.{{name}}.properties[method].properties.params.propertyOrder;
+      const coerced = coerceWithSchema(this.schemas.{{name}}, args, schema);
+      const order = def.properties.{{name}}.properties.params.propertyOrder;
       const sortedArgs = Object.entries(coerced).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b)).map(([_, v]) => v);
+      const method = this.handler.{{name}}.bind(this.handler);
       try {
         ctx.set('Content-Type', 'application/json');
         {{#context}}
         const extractedContext = await this.handler.extractContext(ctx);
         (ctx as any).extractedContext = extractedContext;
-        ctx.body = JSON.stringify(await this.handler[method](extractedContext, ...sortedArgs));
+        ctx.body = JSON.stringify(await method(extractedContext, ...sortedArgs));
         {{/context}}
         {{^context}}
         ctx.extractedContext = {};
-        ctx.body = JSON.stringify(await this.handler[method](...sortedArgs));
+        ctx.body = JSON.stringify(await method(...sortedArgs));
         {{/context}}
       } catch (err) {
-        {{#exceptions}}
-        if (err instanceof {{name}}) {
+        {{#throws}}
+        if (err instanceof {{.}}) {
           ctx.throw(500, 'Internal Server Error', {
             ...err,
             knownError: true,
-            name: '{{name}}',
+            name: '{{.}}',
             message: err.message,
             stack: stackTraceInError ? err.stack : '',
           });
         }
-        {{/exceptions}}
+        {{/throws}}
         throw err;
       }
     });
+    {{/methods}}
   }
 }
 
