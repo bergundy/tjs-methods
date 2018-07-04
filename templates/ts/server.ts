@@ -64,6 +64,7 @@ export class {{name}}Router {
       const order = schema.definitions.{{name}}.properties[method].properties.params.propertyOrder;
       const sortedArgs = Object.entries(coerced).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b)).map(([_, v]) => v);
       try {
+        ctx.set('Content-Type', 'application/json');
         {{#context}}
         const extractedContext = await this.handler.extractContext(ctx);
         (ctx as any).extractedContext = extractedContext;

@@ -158,7 +158,7 @@ const router = new ExampleRouter(h);
 const app = new Koa();
 
 const baseRouter = new Router(); // koa-router
-baseRouter.use('/prefix',  routers.routes(),  routers.allowedMethods());
+baseRouter.use('/prefix',  router.koaRouter.routes(),  router.koaRouter.allowedMethods());
 app.use(baseRouter.routes());
 app.use(async function myCustomMiddleware(ctx: koa.Context, next) {
   // ... implement middlware ...

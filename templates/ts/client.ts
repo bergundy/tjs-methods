@@ -44,12 +44,11 @@ export class {{name}}Client {
     } catch (err) {
       const body = err.response.body;
       if (err.statusCode === 500) {
-        {{#exceptions}}
-        console.error(body.name, '{{name}}');
-        if (body.name === '{{name}}') {
-          throw new {{name}}(body.message);
+        {{#throws}}
+        if (body.name === '{{.}}') {
+          throw new {{.}}(body.message);
         }
-        {{/exceptions}}
+        {{/throws}}
         throw new InternalServerError(body.message);
       }
       throw err;
