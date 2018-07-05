@@ -13,6 +13,9 @@ import {
   {{/classes}}
 } from './interfaces';
 
+import * as interfaces from './interfaces';
+export { interfaces };
+
 {{#classes}}
 {{^attributes}}
 export class {{name}}Client {

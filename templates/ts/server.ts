@@ -18,6 +18,9 @@ import {
   {{/classes}}
 } from './interfaces';
 
+import * as interfaces from './interfaces';
+export { interfaces };
+
 {{#classes}}
 {{^attributes}}
 export interface {{name}}Handler {
