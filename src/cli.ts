@@ -2,11 +2,12 @@ import { format } from 'util';
 import { writeFile, stat } from 'mz/fs';
 import * as path from 'path';
 import * as yargs from 'yargs';
-import { generate } from './index';
+import { generate, Role } from './index';
 
 interface Args {
   pattern: string;
   output: string;
+  role: Role;
 }
 
 const argv = yargs
@@ -22,15 +23,22 @@ const argv = yargs
     demandOption: true,
     describe: 'Directory to output generated files',
   })
+  .option('role',  {
+    type: 'string',
+    alias: 'r',
+    default: Role.ALL,
+    choices: Object.values(Role),
+    describe: 'Generate specific role',
+  })
   .argv;
 
-async function main({ pattern, output }: Args) {
+async function main({ pattern, output, role }: Args) {
   try {
     const st = await stat(output);
     if (!st.isDirectory()) {
       throw new Error(`output dir: ${output} is not a directory`);
     }
-    const schemaCode = await generate(pattern);
+    const schemaCode = await generate(pattern, role);
     await Promise.all(Object.entries(schemaCode).map(
       ([n, c]) => writeFile(path.join(output, n), c)
     ));

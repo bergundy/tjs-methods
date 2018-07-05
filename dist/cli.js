@@ -17,14 +17,21 @@ const argv = yargs
     demandOption: true,
     describe: 'Directory to output generated files',
 })
+    .option('role', {
+    type: 'string',
+    alias: 'r',
+    default: index_1.Role.ALL,
+    choices: Object.values(index_1.Role),
+    describe: 'Generate specific role',
+})
     .argv;
-async function main({ pattern, output }) {
+async function main({ pattern, output, role }) {
     try {
         const st = await fs_1.stat(output);
         if (!st.isDirectory()) {
             throw new Error(`output dir: ${output} is not a directory`);
         }
-        const schemaCode = await index_1.generate(pattern);
+        const schemaCode = await index_1.generate(pattern, role);
         await Promise.all(Object.entries(schemaCode).map(([n, c]) => fs_1.writeFile(path.join(output, n), c)));
     }
     catch (err) {

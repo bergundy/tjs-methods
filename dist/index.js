@@ -12,11 +12,29 @@ const transform_1 = require("./transform");
 const tmplPath = (name) => path.join(__dirname, '..', 'templates', 'ts', name);
 const libPath = path.join(__dirname, '..', 'src', 'lib');
 const names = ['interfaces', 'client', 'server'];
+var Role;
+(function (Role) {
+    Role["ALL"] = "all";
+    Role["CLIENT"] = "client";
+    Role["SERVER"] = "server";
+})(Role = exports.Role || (exports.Role = {}));
+class RoleFilter {
+    static [Role.ALL](_) {
+        return true;
+    }
+    static [Role.CLIENT](f) {
+        return !f.includes('server');
+    }
+    static [Role.SERVER](f) {
+        return !f.includes('client');
+    }
+}
+exports.RoleFilter = RoleFilter;
 async function getLib() {
     const files = await fs_1.readdir(libPath);
     return files.filter((f) => !f.startsWith('test'));
 }
-async function generate(filePattern) {
+async function generate(filePattern, role = Role.ALL) {
     const paths = await util_1.promisify(glob)(filePattern);
     const settings = {
         required: true,
@@ -41,7 +59,7 @@ async function generate(filePattern) {
     const genFiles = names.map((n) => `${n}.ts`);
     const templates = await Promise.all(genFiles.map((n) => fs_1.readFile(tmplPath(n), 'utf-8')));
     const rendered = templates.map((t) => mustache.render(t, spec));
-    return Object.assign({ clientDeps: ['lodash', 'ajv', 'request-promise-native', 'request', ''].join('\n'), serverDeps: ['lodash', 'ajv', 'koa', 'koa-router', 'koa-json-error', 'koa-bodyparser', ''].join('\n') }, lodash_1.fromPairs(lodash_1.zip([...libFiles, ...genFiles], [...libContents, ...rendered])));
+    return lodash_1.pickBy(Object.assign({ clientDeps: ['lodash', 'ajv', 'request-promise-native', 'request', ''].join('\n'), serverDeps: ['lodash', 'ajv', 'koa', 'koa-router', 'koa-json-error', 'koa-bodyparser', ''].join('\n') }, lodash_1.fromPairs(lodash_1.zip([...libFiles, ...genFiles], [...libContents, ...rendered]))), (v, k) => RoleFilter[role](k));
 }
 exports.generate = generate;
 //# sourceMappingURL=index.js.map

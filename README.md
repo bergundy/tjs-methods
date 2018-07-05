@@ -146,6 +146,12 @@ const server = new ExampleServer(h);
 server.listen(8080);
 ```
 
+### Generating only client / server
+```bash
+launch --role client -o ./generated interfaces.ts
+launch --role server -o ./generated interfaces.ts
+```
+
 ### Mounting the app with a different prefix and adding custom middleware
 *`server.ts`*
 ```typescript

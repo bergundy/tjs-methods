@@ -1,5 +1,5 @@
 import { readFile, readdir } from 'mz/fs';
-import { zip, fromPairs } from 'lodash';
+import { zip, fromPairs, pickBy } from 'lodash';
 import * as glob from 'glob';
 import * as ts from 'typescript';
 import * as tjs from 'typescript-json-schema';
@@ -12,11 +12,28 @@ const tmplPath = (name) => path.join(__dirname, '..', 'templates', 'ts', name);
 const libPath = path.join(__dirname, '..', 'src', 'lib');
 const names = ['interfaces', 'client', 'server'];
 
-interface GeneratedCode {
-  interfaces: string;
-  client: string;
-  server: string;
+export interface GeneratedCode {
   [name: string]: string;
+}
+
+export enum Role {
+  ALL = 'all',
+  CLIENT = 'client',
+  SERVER = 'server',
+}
+
+export class RoleFilter {
+  public static [Role.ALL](_: string) {
+    return true;
+  }
+
+  public static [Role.CLIENT](f: string) {
+    return !f.includes('server');
+  }
+
+  public static [Role.SERVER](f: string) {
+    return !f.includes('client');
+  }
 }
 
 async function getLib(): Promise<string[]> {
@@ -24,7 +41,7 @@ async function getLib(): Promise<string[]> {
   return files.filter((f) => !f.startsWith('test'));
 }
 
-export async function generate(filePattern: string): Promise<GeneratedCode> {
+export async function generate(filePattern: string, role: Role = Role.ALL): Promise<GeneratedCode> {
   const paths = await promisify(glob)(filePattern);
   const settings: tjs.PartialArgs = {
     required: true,
@@ -52,11 +69,11 @@ export async function generate(filePattern: string): Promise<GeneratedCode> {
   const genFiles = names.map((n) => `${n}.ts`);
   const templates = await Promise.all(genFiles.map((n) => readFile(tmplPath(n), 'utf-8')));
   const rendered = templates.map((t) => mustache.render(t, spec));
-  return {
+  return pickBy({
     clientDeps: ['lodash', 'ajv', 'request-promise-native', 'request', ''].join('\n'),
     serverDeps: ['lodash', 'ajv', 'koa', 'koa-router', 'koa-json-error', 'koa-bodyparser', ''].join('\n'),
     ...fromPairs(
       zip([...libFiles, ...genFiles], [...libContents, ...rendered])
-    ) as GeneratedCode,
-  };
+    ),
+  }, (v, k) => RoleFilter[role](k)) as GeneratedCode;
 }

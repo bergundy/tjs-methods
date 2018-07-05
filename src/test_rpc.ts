@@ -1,7 +1,6 @@
 import { expect } from 'chai';
 import 'chai-as-promised';
 import 'mocha';
-import { tmpdir } from 'os';
 import { promisify } from 'util';
 import * as path from 'path';
 import { randomBytes } from 'crypto';
