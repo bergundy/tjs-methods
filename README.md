@@ -64,7 +64,7 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
     ```
 1. Install the dependencies
     ```bash
-    cat example/{clientDeps,serverDeps} | sort -u | xargs npm i
+    cat generated/{clientDeps,serverDeps} | sort -u | xargs npm i
     ```
 1. Run (make sure `tsconfig.json` is properly configured for node and is present in the current directory)
     ```bash
