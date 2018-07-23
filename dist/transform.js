@@ -91,7 +91,7 @@ function transformClassPair([className, { properties }]) {
                     type: typeToString(param),
                     last: i === params.length - 1,
                 })),
-                returnType: typeToString(method.properties.returns),
+                returnType: typeToString(method.properties.returns).replace(/^null$/, 'void'),
                 throws: method.properties.throws ? typeToString(method.properties.throws).split(' | ') : [],
             };
         }),

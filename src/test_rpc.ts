@@ -130,6 +130,32 @@ export default async function test(client: TestClient) {
     await new TestCase(schema, handler, test).run();
   });
 
+  it('supports the void return type', async () => {
+    const schema = `
+export interface Test {
+  bar: {
+    params: {
+      a: string;
+    };
+    returns: null;
+  };
+}`;
+    const handler = `
+export default class Handler {
+  public async bar(a: string): Promise<void> {
+  }
+}
+`;
+    const test = `
+import { TestClient } from './client';
+
+export default async function test(client: TestClient) {
+ expect(await client.bar('heh')).to.be.undefined;
+}
+`;
+    await new TestCase(schema, handler, test).run();
+  });
+
   it('works with $reffed schemas', async () => {
     const schema = `
 export interface User {
@@ -208,7 +234,7 @@ export interface Test {
 import { RuntimeError } from './interfaces';
 
 export default class Handler {
-  public async raise(exc: string): Promise<undefined> {
+  public async raise(exc: string): Promise<void> {
     if (exc === 'RuntimeError') {
       throw new RuntimeError('heh');
     }
@@ -246,7 +272,7 @@ export interface Test {
 import { RuntimeError, WalktimeError } from './interfaces';
 
 export default class Handler {
-  public async raise(exc: string): Promise<undefined> {
+  public async raise(exc: string): Promise<void> {
     if (exc === 'RuntimeError') {
       throw new RuntimeError('heh');
     }

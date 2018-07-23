@@ -211,6 +211,11 @@ export interface Example {
 }
 ```
 
+### Void return type
+When null is the only return type on a method, as in `returns: null`, it will compile to `Promise<void>`.
+
+Defining `returns: null | SomethingElse` on a method will compile to `Promise<null | SomethingElse>` return type.
+
 ## Comparison to other tools
 #### OpenAPI (Swagger)
 [OpenAPI](https://www.openapis.org/) provides an easy way to write descriptive REST APIs.
