@@ -80,6 +80,13 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
 
 
 ## Advanced usage
+### Creating an npm package
+Launch can create an npm package for you and publish it if instead of specifying an output dir you give it a publish target.
+In the following example `launch` will publish the generated server files to npm as example-server@0.0.1:
+```bash
+launch -p example-server@0.0.1 -r server interface.ts
+```
+
 ### Calling with curl # TODO
 
 ### Calling with httpie # TODO
