@@ -159,6 +159,31 @@ export default async function test(client: TestClient) {
 `;
         await new TestCase(schema, handler, test).run();
     });
+    it('supports empty params', async () => {
+        const schema = `
+export interface Test {
+  bar: {
+    params: {
+    };
+    returns: string;
+  };
+}`;
+        const handler = `
+export default class Handler {
+  public async bar(): Promise<string> {
+    return 'heh';
+  }
+}
+`;
+        const test = `
+import { TestClient } from './client';
+
+export default async function test(client: TestClient) {
+ expect(await client.bar()).to.be.eql('heh');
+}
+`;
+        await new TestCase(schema, handler, test).run();
+    });
     it('works with $reffed schemas', async () => {
         const schema = `
 export interface User {

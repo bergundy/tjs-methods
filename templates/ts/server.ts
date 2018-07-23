@@ -63,7 +63,8 @@ export class {{name}}Router {
     this.koaRouter.post('/{{name}}', async (ctx) => {
       const args = (ctx.request as any).body;
       const coerced = coerceWithSchema(this.schemas.{{name}}, args, schema);
-      const order = def.properties.{{name}}.properties.params.propertyOrder;
+      const params = def.properties.{{name}}.properties.params;
+      const order = (params as any).propertyOrder || [];
       const sortedArgs = Object.entries(coerced).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b)).map(([_, v]) => v);
       const method = this.handler.{{name}}.bind(this.handler);
       try {
