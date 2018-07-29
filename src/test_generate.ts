@@ -80,4 +80,19 @@ export interface A {
     const code = await new TestCase(iface).generate(Role.SERVER);
     expect(code['interfaces.ts']).to.contain(iface.trim());
   });
+
+  it('respects optional attributes in return value', async () => {
+    const iface = `
+export interface A {
+  foo: {
+    params: {
+    };
+    returns: {
+      a?: number;
+    };
+  };
+}`;
+    const code = await new TestCase(iface).generate(Role.SERVER);
+    expect(code['interfaces.ts']).to.contain('foo(): Promise<{ a?: number; }>');
+  });
 });

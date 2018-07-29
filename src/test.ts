@@ -118,8 +118,9 @@ describe('typeToString', () => {
           format: 'date-time',
         },
       },
+      required: ['user'],
     });
-    expect(result).to.equal('{ user: User; created: Date; }');
+    expect(result).to.equal('{ user: User; created?: Date; }');
   });
   it('transforms array with items as object into TS interface', () => {
     const result = typeToString({

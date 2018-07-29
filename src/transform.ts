@@ -10,15 +10,18 @@ interface TypeDef {
   anyOf?: TypeDef[];
   allOf?: TypeDef[];
   properties?: { [name: string]: TypeDef };
+  required?: string[];
   items?: TypeDef | TypeDef[];
 }
 
 export function typeToString(def: TypeDef): string {
-  const { type, format, $ref, anyOf, allOf, properties, items } = def;
+  const { type, format, $ref, anyOf, allOf, properties, required, items } = def;
   if (typeof type === 'string') {
     if (type === 'object') {
       if (isPlainObject(properties)) {
-        const propString = Object.entries(properties!).map(([n, p]) => `${n}: ${typeToString(p)};`).join(' ');
+        const req = required || [];
+        const propString = Object.entries(properties!).map(([n, p]) =>
+          `${n}${req.includes(n) ? '' : '?'}: ${typeToString(p)};`).join(' ');
         return `{ ${propString} }`;
       }
       return '{}';
