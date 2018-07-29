@@ -74,7 +74,7 @@ function isException(s) {
     const props = s && s.properties;
     return ['name', 'message', 'stack'].every((p) => isString(props[p]));
 }
-function transformClassPair([className, { properties }]) {
+function transformClassPair([className, { properties, required }]) {
     return {
         name: className,
         methods: Object.entries(properties)
@@ -82,6 +82,7 @@ function transformClassPair([className, { properties }]) {
             .map(([methodName, method]) => {
             const params = Object.entries(method.properties.params.properties);
             const order = method.properties.params.propertyOrder;
+            const methRequired = method.properties.params.required || [];
             return {
                 name: methodName,
                 parameters: params
@@ -89,6 +90,7 @@ function transformClassPair([className, { properties }]) {
                     .map(([paramName, param], i) => ({
                     name: paramName,
                     type: typeToString(param),
+                    optional: !methRequired.includes(paramName),
                     last: i === params.length - 1,
                 })),
                 returnType: typeToString(method.properties.returns).replace(/^null$/, 'void'),
@@ -100,6 +102,7 @@ function transformClassPair([className, { properties }]) {
             .map(([attrName, attrDef]) => ({
             name: attrName,
             type: typeToString(attrDef),
+            optional: !(required || []).includes(attrName),
         })),
     };
 }

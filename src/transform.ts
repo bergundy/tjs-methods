@@ -57,6 +57,7 @@ export function typeToString(def: TypeDef): string {
 export interface Parameter {
   name: string;
   type: string;
+  optional: boolean;
   last: boolean;
 }
 
@@ -72,6 +73,7 @@ export interface ClassSpec {
     attributes: Array<{
       name: string;
       type: string;
+      optional: boolean;
     }>;
     methods: Method[];
 }
@@ -117,7 +119,7 @@ function isException(s): boolean {
   return ['name', 'message', 'stack'].every((p) => isString(props[p]));
 }
 
-export function transformClassPair([className, { properties }]: Pair): ClassSpec {
+export function transformClassPair([className, { properties, required }]: Pair): ClassSpec {
   return {
     name: className,
     methods: Object.entries(properties)
@@ -125,6 +127,7 @@ export function transformClassPair([className, { properties }]: Pair): ClassSpec
     .map(([methodName, method]: Pair): Method => {
       const params = Object.entries(method.properties.params.properties);
       const order = method.properties.params.propertyOrder;
+      const methRequired = method.properties.params.required || [];
       return {
         name: methodName,
         parameters: params
@@ -132,6 +135,7 @@ export function transformClassPair([className, { properties }]: Pair): ClassSpec
         .map(([paramName, param], i) => ({
           name: paramName,
           type: typeToString(param as TypeDef),
+          optional: !methRequired.includes(paramName),
           last: i === params.length - 1,
         })),
         returnType: typeToString(method.properties.returns).replace(/^null$/, 'void'),
@@ -143,6 +147,7 @@ export function transformClassPair([className, { properties }]: Pair): ClassSpec
     .map(([attrName, attrDef]: Pair) => ({
       name: attrName,
       type: typeToString(attrDef),
+      optional: !(required || []).includes(attrName),
     })),
   };
 }

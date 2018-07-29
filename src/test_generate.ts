@@ -70,4 +70,14 @@ export interface Test {
       'serverDeps',
     ]);
   });
+
+  it('respects optional params', async () => {
+    const iface = `
+export interface A {
+  readonly optional?: number;
+  readonly required: number;
+}`;
+    const code = await new TestCase(iface).generate(Role.SERVER);
+    expect(code['interfaces.ts']).to.contain(iface.trim());
+  });
 });

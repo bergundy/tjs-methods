@@ -167,6 +167,7 @@ describe('transform', () => {
                         {
                             name: 'x',
                             type: 'number',
+                            optional: true,
                         },
                     ],
                     methods: [],
@@ -219,11 +220,13 @@ describe('transform', () => {
                                 {
                                     name: 'a',
                                     type: 'number',
+                                    optional: true,
                                     last: false,
                                 },
                                 {
                                     name: 'b',
                                     type: 'number',
+                                    optional: true,
                                     last: true,
                                 },
                             ],
@@ -325,14 +328,17 @@ describe('transform', () => {
                         {
                             name: 'message',
                             type: 'string',
+                            optional: false,
                         },
                         {
                             name: 'name',
                             type: 'string',
+                            optional: false,
                         },
                         {
                             name: 'stack',
                             type: 'string',
+                            optional: true,
                         },
                     ],
                     methods: [],
@@ -364,6 +370,7 @@ describe('transform', () => {
                             type: 'string',
                         },
                     },
+                    required: ['foo'],
                 },
             },
         });
@@ -373,6 +380,7 @@ describe('transform', () => {
                 {
                     name: 'foo',
                     type: 'string',
+                    optional: false,
                 },
             ],
             methods: [],
