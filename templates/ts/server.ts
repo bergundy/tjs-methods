@@ -75,7 +75,7 @@ export class {{name}}Router {
         ctx.body = JSON.stringify(await method(extractedContext, ...sortedArgs));
         {{/context}}
         {{^context}}
-        ctx.extractedContext = {};
+        (ctx as any).extractedContext = {};
         ctx.body = JSON.stringify(await method(...sortedArgs));
         {{/context}}
       } catch (err) {
