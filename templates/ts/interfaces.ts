@@ -27,7 +27,7 @@ export interface {{name}} {
   readonly {{name}}{{#optional}}?{{/optional}}: {{{type}}};
   {{/attributes}}
   {{#methods}}
-  {{name}}({{#parameters}}{{name}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
+  {{name}}({{#parameters}}{{name}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
   {{/methods}}
 }
 

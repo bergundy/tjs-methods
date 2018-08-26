@@ -79,7 +79,7 @@ export class {{name}}Client {
   }
   {{#methods}}
 
-  public async {{name}}({{#clientContext}}ctx: Context ,{{/clientContext}}{{#parameters}}{{name}}: {{{type}}}, {{/parameters}}options?: Options): Promise<{{{returnType}}}> {
+  public async {{name}}({{#clientContext}}ctx: Context ,{{/clientContext}}{{#parameters}}{{name}}{{#optional}}?{{/optional}}: {{{type}}}, {{/parameters}}options?: Options): Promise<{{{returnType}}}> {
     try {
       const ret = await this.request.post('/{{name}}', {
         ...options,

@@ -118,6 +118,35 @@ export default async function test(client: TestClient) {
 `;
     await new TestCase(schema, handler, tester).run();
 });
+ava_1.default('supports optional parameters', utils_2.pass, async () => {
+    const schema = `
+export interface Test {
+  bar: {
+    params: {
+      b: string;
+      a: number;
+      c?: string;
+      d?: string;
+    };
+    returns: string;
+  };
+}`;
+    const handler = `
+export default class Handler {
+  public async bar(b: string, a: number, c?: string, d?: string): Promise<string> {
+    return d ? \`\${d} \${b} \${a}\` : \`\${a}\`;
+  }
+}
+`;
+    const tester = `
+import { TestClient } from './client';
+export default async function test(client: TestClient) {
+ expect(await client.bar('hello', 3, undefined, 'x')).to.equal('x hello 3');
+ expect(await client.bar('hello', 3, undefined, undefined)).to.equal('3');
+}
+`;
+    await new TestCase(schema, handler, tester).run();
+});
 ava_1.default('rpc supports the void return type', utils_2.pass, async () => {
     const schema = `
 export interface Test {
