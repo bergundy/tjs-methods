@@ -33,4 +33,13 @@ function createClassValidator(schema, className, field) {
     ]));
 }
 exports.createClassValidator = createClassValidator;
+function createInterfaceValidator(schema, ifaceName) {
+    const ajv = new Ajv({ useDefaults: true });
+    ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
+    for (const [k, v] of Object.entries(schema.definitions)) {
+        ajv.addSchema(v, `#/definitions/${k}`);
+    }
+    return ajv.compile(schema.definitions[ifaceName]);
+}
+exports.createInterfaceValidator = createInterfaceValidator;
 //# sourceMappingURL=common.js.map

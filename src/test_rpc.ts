@@ -322,9 +322,9 @@ export default async function test(client: TestClient) {
     await new TestCase(schema, handler, test).run();
   });
 
-  it('supports the Context interface', async () => {
+  it('supports the ServerOnlyContext interface', async () => {
     const schema = `
-export interface Context {
+export interface ServerOnlyContext {
   ip: string;
 }
 
@@ -338,7 +338,7 @@ export interface Test {
 }`;
     const handler = `
 import * as koa from 'koa';
-import { Context } from './interfaces';
+import { Context } from './server';
 
 export default class Handler {
   public async extractContext(_: koa.Context): Promise<Context> {
@@ -356,6 +356,84 @@ import { TestClient } from './client';
 export default async function test(client: TestClient) {
   const result = await client.hello('vova');
   expect(result).to.equal('Hello, vova from test');
+}
+`;
+    await new TestCase(schema, handler, test).run();
+  });
+
+  it('supports the ClientContext interface', async () => {
+    const schema = `
+export interface ClientContext {
+  debugId: string;
+}
+
+export interface Test {
+  hello: {
+    params: {
+      name: string;
+    };
+    returns: string;
+  };
+}`;
+    const handler = `
+import * as koa from 'koa';
+import { Context } from './server';
+
+export default class Handler {
+  public async hello({ debugId }: Context, name: string): Promise<string> {
+    return 'Hello, ' + name + ' d ' + debugId;
+  }
+}
+`;
+    const test = `
+import { TestClient, Context } from './client';
+
+export default async function test(client: TestClient) {
+  const result = await client.hello({ debugId: '666' } as Context, 'vova');
+  expect(result).to.equal('Hello, vova d 666');
+}
+`;
+    await new TestCase(schema, handler, test).run();
+  });
+
+  it('supports the combination of ClientContext and ServerOnlyContext', async () => {
+    const schema = `
+export interface ClientContext {
+  debugId: string;
+}
+
+export interface ServerOnlyContext {
+  ip: string;
+}
+
+export interface Test {
+  hello: {
+    params: {
+      name: string;
+    };
+    returns: string;
+  };
+}`;
+    const handler = `
+import * as koa from 'koa';
+import { Context, ServerOnlyContext } from './server';
+
+export default class Handler {
+  public async extractContext(_: koa.Context): Promise<ServerOnlyContext> {
+    return { ip: 'test' };
+  }
+
+  public async hello({ debugId, ip }: Context, name: string): Promise<string> {
+    return 'Hello, ' + name + ' d ' + debugId + ' from ' + ip;
+  }
+}
+`;
+    const test = `
+import { TestClient, Context } from './client';
+
+export default async function test(client: TestClient) {
+  const result = await client.hello({ debugId: '666' } as Context, 'vova');
+  expect(result).to.equal('Hello, vova d 666 from test');
 }
 `;
     await new TestCase(schema, handler, test).run();

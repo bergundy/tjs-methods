@@ -178,7 +178,9 @@ describe('transform', () => {
           methods: [],
         },
       ],
-      context: undefined,
+      clientContext: undefined,
+      serverOnlyContext: undefined,
+      serverContext: undefined,
     });
   });
 
@@ -242,7 +244,9 @@ describe('transform', () => {
           ],
         },
       ],
-      context: undefined,
+      clientContext: undefined,
+      serverOnlyContext: undefined,
+      serverContext: undefined,
     });
   });
 
@@ -367,14 +371,16 @@ describe('transform', () => {
           ],
         },
       ],
-      context: undefined,
+      clientContext: undefined,
+      serverOnlyContext: undefined,
+      serverContext: undefined,
     });
   });
 
   it('returns a context class when given a Context interface', () => {
     const result = transform({
       definitions: {
-        Context: {
+        ClientContext: {
           properties: {
             foo: {
               type: 'string',
@@ -384,8 +390,8 @@ describe('transform', () => {
         },
       },
     });
-    expect(result.context).to.eql({
-      name: 'Context',
+    expect(result.clientContext).to.eql({
+      name: 'ClientContext',
       attributes: [
         {
           name: 'foo',

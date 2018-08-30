@@ -85,7 +85,9 @@ export interface ServiceSpec {
   schema: string;
   classes: ClassSpec[];
   exceptions: ClassSpec[];
-  context?: ClassSpec;
+  clientContext?: ClassSpec;
+  serverOnlyContext?: ClassSpec;
+  serverContext?: string;
 }
 
 export function findRefs(definition): string[] {
@@ -162,11 +164,17 @@ export function transform(schema): ServiceSpec {
   const [exceptionsWithName, classesWithName] = partition(classDefinitions, ([_, s]) => isException(s));
   const exceptions = exceptionsWithName.map(transformClassPair);
   const classes = classesWithName.map(transformClassPair);
-  const context = classes.find(({ name }) => name === 'Context');
+  const clientContext = classes.find(({ name }) => name === 'ClientContext');
+  const serverOnlyContext = classes.find(({ name }) => name === 'ServerOnlyContext');
+  const serverContext = clientContext
+    ? (serverOnlyContext ? 'ClientContext & ServerOnlyContext' : 'ClientContext')
+    : (serverOnlyContext ? 'ServerOnlyContext' : undefined);
   return {
     schema: JSON.stringify(schema),
     classes,
     exceptions,
-    context,
+    clientContext,
+    serverOnlyContext,
+    serverContext,
   };
 }

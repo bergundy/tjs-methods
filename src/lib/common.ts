@@ -35,3 +35,12 @@ export function createClassValidator(schema: { definitions: any }, className, fi
     method, ajv.compile((s as any).properties[field]),
   ]));
 }
+
+export function createInterfaceValidator(schema: { definitions: any }, ifaceName: string): Ajv.ValidateFunction {
+  const ajv = new Ajv({ useDefaults: true });
+  ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
+  for (const [k, v] of Object.entries(schema.definitions)) {
+    ajv.addSchema(v, `#/definitions/${k}`);
+  }
+  return ajv.compile(schema.definitions[ifaceName]);
+}

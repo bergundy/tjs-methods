@@ -18,15 +18,22 @@ import {
   {{/classes}}
 } from './interfaces';
 
+{{#serverOnlyContext}}
+export { ServerOnlyContext };
+{{/serverOnlyContext}}
+{{#serverContext}}
+export type Context = {{{serverContext}}};
+{{/serverContext}}
+
 {{#classes}}
 {{^attributes}}
 export interface {{name}}Handler {
   {{#attributes}}
   readonly {{name}}: {{type}};
   {{/attributes}}
-  {{#context}}extractContext(ctx: Koa.Context): Promise<Context>;{{/context}}
+  {{#serverOnlyContext}}extractContext(ctx: Koa.Context): Promise<Context>;{{/serverOnlyContext}}
   {{#methods}}
-  {{name}}({{#context}}ctx: Context, {{/context}}{{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}>;
+  {{name}}({{#serverContext}}ctx: Context, {{/serverContext}}{{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}>;
   {{/methods}}
 }
 
@@ -61,7 +68,7 @@ export class {{name}}Router {
 
     {{#methods}}
     this.koaRouter.post('/{{name}}', async (ctx) => {
-      const args = (ctx.request as any).body;
+      const { context: clientContextFromBody, args } = (ctx.request as any).body;
       const coerced = coerceWithSchema(this.schemas.{{name}}, args, schema);
       const params = def.properties.{{name}}.properties.params;
       const order = (params as any).propertyOrder || [];
@@ -69,15 +76,26 @@ export class {{name}}Router {
       const method = this.handler.{{name}}.bind(this.handler);
       try {
         ctx.set('Content-Type', 'application/json');
-        {{#context}}
-        const extractedContext = await this.handler.extractContext(ctx);
-        (ctx as any).extractedContext = extractedContext;
-        ctx.body = JSON.stringify(await method(extractedContext, ...sortedArgs));
-        {{/context}}
-        {{^context}}
-        (ctx as any).extractedContext = {};
+        {{#clientContext}}
+        const clientContext = clientContextFromBody as ClientContext;
+        {{/clientContext}}
+        {{^clientContext}}
+        const clientContext = {};
+        {{/clientContext}}
+        {{#serverOnlyContext}}
+        const serverOnlyContext = await this.handler.extractContext(ctx);
+        {{/serverOnlyContext}}
+        {{^serverOnlyContext}}
+        const serverOnlyContext = {};
+        {{/serverOnlyContext}}
+        const context = { ...clientContext, ...serverOnlyContext };
+        (ctx as any).extractedContext = context;
+        {{#serverContext}}
+        ctx.body = JSON.stringify(await method(context, ...sortedArgs));
+        {{/serverContext}}
+        {{^serverContext}}
         ctx.body = JSON.stringify(await method(...sortedArgs));
-        {{/context}}
+        {{/serverContext}}
       } catch (err) {
         {{#throws}}
         if (err instanceof {{.}}) {

@@ -174,7 +174,9 @@ describe('transform', () => {
                     methods: [],
                 },
             ],
-            context: undefined,
+            clientContext: undefined,
+            serverOnlyContext: undefined,
+            serverContext: undefined,
         });
     });
     it('transforms a simple class with single method', () => {
@@ -237,7 +239,9 @@ describe('transform', () => {
                     ],
                 },
             ],
-            context: undefined,
+            clientContext: undefined,
+            serverOnlyContext: undefined,
+            serverContext: undefined,
         });
     });
     it('sorts output class by checking references', () => {
@@ -359,13 +363,15 @@ describe('transform', () => {
                     ],
                 },
             ],
-            context: undefined,
+            clientContext: undefined,
+            serverOnlyContext: undefined,
+            serverContext: undefined,
         });
     });
     it('returns a context class when given a Context interface', () => {
         const result = transform_1.transform({
             definitions: {
-                Context: {
+                ClientContext: {
                     properties: {
                         foo: {
                             type: 'string',
@@ -375,8 +381,8 @@ describe('transform', () => {
                 },
             },
         });
-        chai_1.expect(result.context).to.eql({
-            name: 'Context',
+        chai_1.expect(result.clientContext).to.eql({
+            name: 'ClientContext',
             attributes: [
                 {
                     name: 'foo',

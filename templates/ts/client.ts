@@ -13,6 +13,10 @@ import {
   {{/classes}}
 } from './interfaces';
 
+{{#clientContext}}
+export type Context = ClientContext;
+{{/clientContext}}
+
 {{#classes}}
 {{^attributes}}
 export class {{name}}Client {
@@ -30,14 +34,19 @@ export class {{name}}Client {
   }
   {{#methods}}
 
-  public async {{name}}({{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}> {
+  public async {{name}}({{#clientContext}}ctx: Context ,{{/clientContext}}{{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}> {
     try {
       const ret = await request.post(`${this.serverUrl}/{{name}}`, {
         json: true,
         body: {
-          {{#parameters}}
-          {{name}},
-          {{/parameters}}
+          args: {
+            {{#parameters}}
+            {{name}},
+            {{/parameters}}
+          },
+          {{#clientContext}}
+          context: ctx,
+          {{/clientContext}}
         }
       });
       return coerceWithSchema(this.schemas.{{name}}, ret, schema) as {{returnType}};

@@ -115,12 +115,18 @@ function transform(schema) {
     const [exceptionsWithName, classesWithName] = lodash_1.partition(classDefinitions, ([_, s]) => isException(s));
     const exceptions = exceptionsWithName.map(transformClassPair);
     const classes = classesWithName.map(transformClassPair);
-    const context = classes.find(({ name }) => name === 'Context');
+    const clientContext = classes.find(({ name }) => name === 'ClientContext');
+    const serverOnlyContext = classes.find(({ name }) => name === 'ServerOnlyContext');
+    const serverContext = clientContext
+        ? (serverOnlyContext ? 'ClientContext & ServerOnlyContext' : 'ClientContext')
+        : (serverOnlyContext ? 'ServerOnlyContext' : undefined);
     return {
         schema: JSON.stringify(schema),
         classes,
         exceptions,
-        context,
+        clientContext,
+        serverOnlyContext,
+        serverContext,
     };
 }
 exports.transform = transform;
