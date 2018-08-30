@@ -112,12 +112,22 @@ export interface Example {
 ```
 
 ### Context
-Some uses require context to be passed on to handlers (i.e. for authentication / extracting the request IP).
-Adding a `Context` interface to the schema will cause the framework to prepend it as the first param to method signatures, servers will accept a function that accepts a request object (depends on the runtime) and returns a context object to be passed to methods.
+Some use cases require context to be passed on to handlers (i.e. for authentication / extracting the request IP).
+
+There are 2 types of contexts in `launch`, `ClientContext` and `ServerOnlyContext`.
+
+* `ClientContext` is prepended to the client call signature and is exported as `Context` from the generated client file.
+* `ServerOnlyContext` is extracted by the server using a custom provided function that accepts a request object (depends on the runtime) and returns a context object.  Handler methods receive a context which is an intersection of `ClientContext` and `ServerOnlyContext` and is exported as `Context` from the generated server code.
+
+To use contexts simply add them to your interfaces file.
 
 *`interface.ts`*
 ```typescript
-export interface Context {
+export interface ClientContext {
+  token: string;
+}
+
+export interface ServerOnlyContext {
   ip: string;
 }
 
@@ -134,16 +144,15 @@ export interface Example {
 *`server.ts`*
 ```typescript
 import * as koa from 'koa';
-import { Context } from './generated/interfaces';
-import { ExampleServer } from './generated/server';
+import { ExampleServer, Context, ServerOnlyContext } from './generated/server';
 
 export class Handler {
-  public async extractContext({ ip }: koa.Context): Promise<Context> {
+  public async extractContext({ ip }: koa.Context): Promise<ServerOnlyContext> {
     return { ip };
   }
 
-  public async hello({ ip }: Context, name: string): Promise<string> {
-    return `Hello, ${name} from ${ip}!`;
+  public async hello({ token, ip }: Context, name: string): Promise<string> {
+    return `Hello, ${name} from ${ip}, token: ${token}`;
   }
 }
 
@@ -151,6 +160,18 @@ const h = new Handler();
 
 const server = new ExampleServer(h);
 server.listen(8080);
+```
+
+*`client.ts`*
+```typescript
+import { ExampleClient, Context } from './generated/client';
+
+async function main() {
+  const client = new ExampleClient('http://localhost:8080');
+  await client.hello({ token: 'abc' }, 'baba'); // Hello, baba from 127.0.0.1, token: abc
+}
+
+main();
 ```
 
 ### Generating only client / server
