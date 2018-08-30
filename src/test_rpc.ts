@@ -30,9 +30,10 @@ class TestCase {
     public readonly handler: string,
     public readonly test: string,
     public readonly mw?: string,
+    main?: string,
     public readonly dir = mktemp()
   ) {
-    this.main = `
+    this.main = main || `
 import { AddressInfo } from 'net';
 import { TestServer } from './server';
 import { TestClient } from './client';
@@ -437,5 +438,110 @@ export default async function test(client: TestClient) {
 }
 `;
     await new TestCase(schema, handler, test).run();
+  });
+  const defaultSchema = `
+export interface Test {
+  bar: {
+    params: {
+      a: string;
+    };
+    returns: string;
+  };
+}`;
+  const defaultHandler = `
+import * as koa from 'koa';
+
+export default class Handler {
+  public async bar(a: string): Promise<string> {
+    return 'Hello, ' + a;
+  }
+}
+`;
+  const closeServerMain = `
+import { AddressInfo } from 'net';
+import { TestServer } from './server';
+import { TestClient } from './client';
+import Handler from './handler';
+import test from './test';
+
+async function main() {
+  const h = new Handler();
+
+  const server = new TestServer(h, true${this.mw ? ', [mw]' : ''});
+  const listener = await server.listen(0, '127.0.0.1');
+  const { address, port } = (listener.address() as AddressInfo);
+  const client = new TestClient('http://' + address + ':' + port);
+  listener.close();
+  await test(client, port);
+  process.exit(0);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
+    `;
+  it('forwards network errors', async () => {
+    const test = `
+import { TestClient } from './client';
+
+export default async function test(client: TestClient, _: number) {
+  try { await client.bar('heh'); }
+  catch(err) {
+    expect(err.message).to.match(/^Error: connect ECONNREFUSED/);
+    return;
+  }
+  expect(1).to.equal(2);
+}
+`;
+    await new TestCase(defaultSchema, defaultHandler, test, undefined, closeServerMain).run();
+  });
+  it('handles empty 500 responses', async () => {
+    const test = `
+import { TestClient } from './client';
+import * as http from 'http';
+
+export default async function test(client: TestClient, port: number) {
+  await new Promise((resolve, reject) => {
+    const fakeServer = http.createServer((req, res) => {
+      res.statusCode = 500;
+      res.statusMessage = 'sorry';
+      res.end();
+    }).listen(port, resolve);
+    fakeServer.once('error', reject);
+  });
+  try { await client.bar('heh'); }
+  catch(err) {
+    expect(err.message).to.equal('500 - undefined');
+    return;
+  }
+  expect(1).to.equal(2);
+}
+`;
+    await new TestCase(defaultSchema, defaultHandler, test, undefined, closeServerMain).run();
+  });
+  it('handles non-json 500 responses', async () => {
+    const test = `
+import { TestClient } from './client';
+import * as http from 'http';
+
+export default async function test(client: TestClient, port: number) {
+  await new Promise((resolve, reject) => {
+    const fakeServer = http.createServer((req, res) => {
+      res.statusCode = 500;
+      res.statusMessage = 'Internal Server Error';
+      res.end('Internal Server Error');
+    }).listen(port, resolve);
+    fakeServer.once('error', reject);
+  });
+  try { await client.bar('heh'); }
+  catch(err) {
+    expect(err.message).to.equal('500 - "Internal Server Error"');
+    return;
+  }
+  expect(1).to.equal(2);
+}
+`;
+    await new TestCase(defaultSchema, defaultHandler, test, undefined, closeServerMain).run();
   });
 });
