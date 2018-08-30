@@ -89,7 +89,7 @@ export class {{name}}Router {
         const serverOnlyContext = {};
         {{/serverOnlyContext}}
         const context = { ...clientContext, ...serverOnlyContext };
-        (ctx as any).extractedContext = context;
+        ctx.state.context = context;
         {{#serverContext}}
         ctx.body = JSON.stringify(await method(context, ...sortedArgs));
         {{/serverContext}}
