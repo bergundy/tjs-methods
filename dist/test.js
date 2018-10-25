@@ -410,5 +410,25 @@ describe('transform', () => {
             methods: [],
         });
     });
+    it('throws when passed non string enum', () => {
+        chai_1.expect(() => transform_1.transform({
+            definitions: {
+                OneTwoThree: {
+                    type: 'number',
+                    enum: [1, 2, 3],
+                },
+            },
+        })).to.throw('Unsupported enum type definitions found (expected string values only): OneTwoThree');
+    });
+    it('throws when passed string enum with invalid value', () => {
+        chai_1.expect(() => transform_1.transform({
+            definitions: {
+                InvalidStringEnum: {
+                    type: 'string',
+                    enum: ['1ss', 'sss'],
+                },
+            },
+        })).to.throw(/^Unsupported enum value found \(does not match .+\): InvalidStringEnum$/);
+    });
 });
 //# sourceMappingURL=test.js.map

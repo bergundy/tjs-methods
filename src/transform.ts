@@ -1,4 +1,4 @@
-import { fromPairs, isPlainObject, flatMap, mapValues, partition } from 'lodash';
+import { first, fromPairs, isPlainObject, flatMap, mapValues, partition } from 'lodash';
 import * as toposort from 'toposort';
 
 type Pair = [string, any];
@@ -167,7 +167,7 @@ export function transformClassPair([className, { properties, required }]: Pair):
   };
 }
 
-const validEnumKeyRegex = /[a-z]+[a-z\d_]*/i;
+const validEnumKeyRegex = /^[a-z][a-z\d_]*$/i;
 const isValidEnumKeyRegex = (s) => validEnumKeyRegex.test(s);
 
 export function transform(schema): ServiceSpec {
@@ -175,8 +175,22 @@ export function transform(schema): ServiceSpec {
   const sortedDefinitions = sortDefinitions(definitions);
   const bypassTypeDefs = sortedDefinitions.filter(
     ([_, { anyOf, allOf }]: Pair) => anyOf || allOf);
-  const stringEnumTypeDefs = sortedDefinitions.filter(
-    ([_, { enum: enumDef, type }]: Pair) => type === 'string' && enumDef && enumDef.every(isValidEnumKeyRegex));
+  const possibleEnumTypeDefs = sortedDefinitions.filter(
+    ([_, { enum: enumDef }]: Pair) => enumDef);
+  const stringEnumTypeDefs = possibleEnumTypeDefs.filter(
+    ([_, { enum: enumDef, type }]: Pair) => type === 'string' && enumDef.every(isValidEnumKeyRegex));
+  const invalidTypeEnumTypeDefs = possibleEnumTypeDefs.filter(
+    ([_, { type }]: Pair) => type !== 'string').map(first);
+  const invalidStringEnumTypeDefs = possibleEnumTypeDefs.filter(
+    ([_, { enum: enumDef }]: Pair) => enumDef.some((d) => !isValidEnumKeyRegex(d))).map(first);
+  if (invalidTypeEnumTypeDefs.length > 0) {
+    throw new Error(
+      `Unsupported enum type definitions found (expected string values only): ${invalidTypeEnumTypeDefs}`);
+  }
+  if (invalidStringEnumTypeDefs.length > 0) {
+    throw new Error(
+      `Unsupported enum value found (does not match ${validEnumKeyRegex}): ${invalidStringEnumTypeDefs}`);
+  }
   const enums = stringEnumTypeDefs.map(([name, { enum: enumDef }]) => ({
     name,
     def: enumDef.map((value) => ({ key: value.toUpperCase(), value: `'${value}'` })),
