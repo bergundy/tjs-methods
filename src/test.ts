@@ -80,6 +80,13 @@ describe('typeToString', () => {
     const result = typeToString({ type: 'string', format: 'date-time' });
     expect(result).to.equal('Date');
   });
+  it('transforms enum into pipe separated string', () => {
+    const result = typeToString({
+      type: 'string',
+      enum: ['a', 'b'],
+    });
+    expect(result).to.equal('"a" | "b"');
+  });
   it('transforms anyOf into pipe separated string', () => {
     const result = typeToString({
       anyOf: [
@@ -402,5 +409,4 @@ describe('transform', () => {
       methods: [],
     });
   });
-
 });

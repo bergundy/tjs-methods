@@ -77,6 +77,13 @@ describe('typeToString', () => {
         const result = transform_1.typeToString({ type: 'string', format: 'date-time' });
         chai_1.expect(result).to.equal('Date');
     });
+    it('transforms enum into pipe separated string', () => {
+        const result = transform_1.typeToString({
+            type: 'string',
+            enum: ['a', 'b'],
+        });
+        chai_1.expect(result).to.equal('"a" | "b"');
+    });
     it('transforms anyOf into pipe separated string', () => {
         const result = transform_1.typeToString({
             anyOf: [

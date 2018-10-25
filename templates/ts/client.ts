@@ -34,7 +34,7 @@ export class {{name}}Client {
   }
   {{#methods}}
 
-  public async {{name}}({{#clientContext}}ctx: Context ,{{/clientContext}}{{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}> {
+  public async {{name}}({{#clientContext}}ctx: Context ,{{/clientContext}}{{#parameters}}{{name}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}> {
     try {
       const ret = await request.post(`${this.serverUrl}/{{name}}`, {
         json: true,

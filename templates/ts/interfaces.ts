@@ -12,10 +12,10 @@ export class {{name}} extends Error {
 {{#classes}}
 export interface {{name}} {
   {{#attributes}}
-  readonly {{name}}{{#optional}}?{{/optional}}: {{type}};
+  readonly {{name}}{{#optional}}?{{/optional}}: {{{type}}};
   {{/attributes}}
   {{#methods}}
-  {{name}}({{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}>;
+  {{name}}({{#parameters}}{{name}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
   {{/methods}}
 }
 

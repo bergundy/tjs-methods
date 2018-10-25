@@ -29,11 +29,11 @@ export type Context = {{{serverContext}}};
 {{^attributes}}
 export interface {{name}}Handler {
   {{#attributes}}
-  readonly {{name}}: {{type}};
+  readonly {{name}}: {{{type}}};
   {{/attributes}}
   {{#serverOnlyContext}}extractContext(ctx: Koa.Context): Promise<Context>;{{/serverOnlyContext}}
   {{#methods}}
-  {{name}}({{#serverContext}}ctx: Context, {{/serverContext}}{{#parameters}}{{name}}: {{type}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{returnType}}>;
+  {{name}}({{#serverContext}}ctx: Context, {{/serverContext}}{{#parameters}}{{name}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
   {{/methods}}
 }
 

@@ -12,11 +12,15 @@ interface TypeDef {
   properties?: { [name: string]: TypeDef };
   required?: string[];
   items?: TypeDef | TypeDef[];
+  enum?: any[];
 }
 
 export function typeToString(def: TypeDef): string {
-  const { type, format, $ref, anyOf, allOf, properties, required, items } = def;
+  const { type, format, $ref, anyOf, allOf, properties, required, items, enum: defEnum } = def;
   if (typeof type === 'string') {
+    if (defEnum) {
+      return defEnum.map((d) => JSON.stringify(d)).join(' | ');
+    }
     if (type === 'object') {
       if (isPlainObject(properties)) {
         const req = required || [];
