@@ -13,10 +13,14 @@ interface TypeDef {
   required?: string[];
   items?: TypeDef | TypeDef[];
   enum?: any[];
+  launchType?: string;
 }
 
 export function typeToString(def: TypeDef): string {
-  const { type, format, $ref, anyOf, allOf, properties, required, items, enum: defEnum } = def;
+  const { type, format, $ref, anyOf, allOf, properties, required, items, enum: defEnum, launchType } = def;
+  if (typeof launchType === 'string') {
+    return launchType;
+  }
   if (typeof type === 'string') {
     if (defEnum) {
       return defEnum.map((d) => JSON.stringify(d)).join(' | ');

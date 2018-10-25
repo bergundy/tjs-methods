@@ -3,7 +3,10 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const lodash_1 = require("lodash");
 const toposort = require("toposort");
 function typeToString(def) {
-    const { type, format, $ref, anyOf, allOf, properties, required, items, enum: defEnum } = def;
+    const { type, format, $ref, anyOf, allOf, properties, required, items, enum: defEnum, launchType } = def;
+    if (typeof launchType === 'string') {
+        return launchType;
+    }
     if (typeof type === 'string') {
         if (defEnum) {
             return defEnum.map((d) => JSON.stringify(d)).join(' | ');

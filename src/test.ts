@@ -66,12 +66,14 @@ describe('typeToString', () => {
     const result = typeToString({ type: 'integer' });
     expect(result).to.equal('number');
   });
-
   it('passes through a string type', () => {
     const result = typeToString({ type: 'string' });
     expect(result).to.equal('string');
   });
-
+  it('transforms launchType to launchType', () => {
+    const result = typeToString({ type: 'string', launchType: 'LT' });
+    expect(result).to.equal('LT');
+  });
   it('transforms ref into class name', () => {
     const result = typeToString({ $ref: '#/definitions/User' });
     expect(result).to.equal('User');
@@ -100,7 +102,7 @@ describe('typeToString', () => {
     });
     expect(result).to.equal('string | User');
   });
-  it('transforms anyOf into ampersand separated string', () => {
+  it('transforms allOf into ampersand separated string', () => {
     const result = typeToString({
       allOf: [
         {

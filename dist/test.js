@@ -69,6 +69,10 @@ describe('typeToString', () => {
         const result = transform_1.typeToString({ type: 'string' });
         chai_1.expect(result).to.equal('string');
     });
+    it('transforms launchType to launchType', () => {
+        const result = transform_1.typeToString({ type: 'string', launchType: 'LT' });
+        chai_1.expect(result).to.equal('LT');
+    });
     it('transforms ref into class name', () => {
         const result = transform_1.typeToString({ $ref: '#/definitions/User' });
         chai_1.expect(result).to.equal('User');
@@ -97,7 +101,7 @@ describe('typeToString', () => {
         });
         chai_1.expect(result).to.equal('string | User');
     });
-    it('transforms anyOf into ampersand separated string', () => {
+    it('transforms allOf into ampersand separated string', () => {
         const result = transform_1.typeToString({
             allOf: [
                 {

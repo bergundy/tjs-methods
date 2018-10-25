@@ -40,6 +40,7 @@ async function generate(filePattern, role = Role.ALL) {
         required: true,
         noExtraProps: true,
         propOrder: true,
+        validationKeywords: ['launchType'],
     };
     const compilerOptions = {
         strictNullChecks: true,
