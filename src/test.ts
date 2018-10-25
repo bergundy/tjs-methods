@@ -188,6 +188,8 @@ describe('transform', () => {
       clientContext: undefined,
       serverOnlyContext: undefined,
       serverContext: undefined,
+      enums: [],
+      bypassTypes: [],
     });
   });
 
@@ -254,6 +256,8 @@ describe('transform', () => {
       clientContext: undefined,
       serverOnlyContext: undefined,
       serverContext: undefined,
+      enums: [],
+      bypassTypes: [],
     });
   });
 
@@ -381,6 +385,8 @@ describe('transform', () => {
       clientContext: undefined,
       serverOnlyContext: undefined,
       serverContext: undefined,
+      enums: [],
+      bypassTypes: [],
     });
   });
 

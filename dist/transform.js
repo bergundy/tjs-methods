@@ -111,9 +111,18 @@ function transformClassPair([className, { properties, required }]) {
     };
 }
 exports.transformClassPair = transformClassPair;
+const validEnumKeyRegex = /[a-z]+[a-z\d_]*/i;
+const isValidEnumKeyRegex = (s) => validEnumKeyRegex.test(s);
 function transform(schema) {
     const { definitions } = schema;
     const sortedDefinitions = sortDefinitions(definitions);
+    const bypassTypeDefs = sortedDefinitions.filter(([_, { anyOf, allOf }]) => anyOf || allOf);
+    const stringEnumTypeDefs = sortedDefinitions.filter(([_, { enum: enumDef, type }]) => type === 'string' && enumDef && enumDef.every(isValidEnumKeyRegex));
+    const enums = stringEnumTypeDefs.map(([name, { enum: enumDef }]) => ({
+        name,
+        def: enumDef.map((value) => ({ key: value.toUpperCase(), value: `'${value}'` })),
+    }));
+    const bypassTypes = bypassTypeDefs.map(([name, v]) => ({ name, def: typeToString(v) }));
     const classDefinitions = sortedDefinitions.filter(([_, { properties }]) => properties);
     const [exceptionsWithName, classesWithName] = lodash_1.partition(classDefinitions, ([_, s]) => isException(s));
     const exceptions = exceptionsWithName.map(transformClassPair);
@@ -127,6 +136,8 @@ function transform(schema) {
         schema: JSON.stringify(schema),
         classes,
         exceptions,
+        enums,
+        bypassTypes,
         clientContext,
         serverOnlyContext,
         serverContext,

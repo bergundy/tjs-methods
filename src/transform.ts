@@ -92,6 +92,8 @@ export interface ServiceSpec {
   clientContext?: ClassSpec;
   serverOnlyContext?: ClassSpec;
   serverContext?: string;
+  bypassTypes?: Array<{ name: string; def: string; }>;
+  enums?: Array<{ name: string; def: Array<{ key: string; value: string; }> }>;
 }
 
 export function findRefs(definition): string[] {
@@ -161,9 +163,21 @@ export function transformClassPair([className, { properties, required }]: Pair):
   };
 }
 
+const validEnumKeyRegex = /[a-z]+[a-z\d_]*/i;
+const isValidEnumKeyRegex = (s) => validEnumKeyRegex.test(s);
+
 export function transform(schema): ServiceSpec {
   const { definitions } = schema;
   const sortedDefinitions = sortDefinitions(definitions);
+  const bypassTypeDefs = sortedDefinitions.filter(
+    ([_, { anyOf, allOf }]: Pair) => anyOf || allOf);
+  const stringEnumTypeDefs = sortedDefinitions.filter(
+    ([_, { enum: enumDef, type }]: Pair) => type === 'string' && enumDef && enumDef.every(isValidEnumKeyRegex));
+  const enums = stringEnumTypeDefs.map(([name, { enum: enumDef }]) => ({
+    name,
+    def: enumDef.map((value) => ({ key: value.toUpperCase(), value: `'${value}'` })),
+  }));
+  const bypassTypes = bypassTypeDefs.map(([name, v]) => ({ name, def: typeToString(v) }));
   const classDefinitions = sortedDefinitions.filter(([_, { properties }]: Pair) => properties);
   const [exceptionsWithName, classesWithName] = partition(classDefinitions, ([_, s]) => isException(s));
   const exceptions = exceptionsWithName.map(transformClassPair);
@@ -177,6 +191,8 @@ export function transform(schema): ServiceSpec {
     schema: JSON.stringify(schema),
     classes,
     exceptions,
+    enums,
+    bypassTypes,
     clientContext,
     serverOnlyContext,
     serverContext,

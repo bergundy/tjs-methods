@@ -184,6 +184,8 @@ describe('transform', () => {
             clientContext: undefined,
             serverOnlyContext: undefined,
             serverContext: undefined,
+            enums: [],
+            bypassTypes: [],
         });
     });
     it('transforms a simple class with single method', () => {
@@ -249,6 +251,8 @@ describe('transform', () => {
             clientContext: undefined,
             serverOnlyContext: undefined,
             serverContext: undefined,
+            enums: [],
+            bypassTypes: [],
         });
     });
     it('sorts output class by checking references', () => {
@@ -373,6 +377,8 @@ describe('transform', () => {
             clientContext: undefined,
             serverOnlyContext: undefined,
             serverContext: undefined,
+            enums: [],
+            bypassTypes: [],
         });
     });
     it('returns a context class when given a Context interface', () => {

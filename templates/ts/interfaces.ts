@@ -9,6 +9,18 @@ export class {{name}} extends Error {
 }
 
 {{/exceptions}}
+{{#enums}}
+export enum {{name}} {
+  {{#def}}
+  {{{key}}} = {{{value}}},
+  {{/def}}
+}
+
+{{/enums}}
+{{#bypassTypes}}
+export type {{name}} = {{{def}}};
+
+{{/bypassTypes}}
 {{#classes}}
 export interface {{name}} {
   {{#attributes}}
