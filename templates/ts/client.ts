@@ -11,6 +11,12 @@ import {
   {{#classes}}
   {{name}},
   {{/classes}}
+  {{#enums}}
+  {{name}},
+  {{/enums}}
+  {{#bypassTypes}}
+  {{name}},
+  {{/bypassTypes}}
 } from './interfaces';
 
 {{#clientContext}}
