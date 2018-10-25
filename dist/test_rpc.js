@@ -459,6 +459,7 @@ async function main() {
 main();
     `;
     it('forwards network errors', async () => {
+        // TODO: potential race condition if port reopens by other process immediately after close
         const test = `
 import { TestClient } from './client';
 import { AddressInfo } from 'net';

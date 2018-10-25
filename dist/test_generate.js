@@ -86,5 +86,20 @@ export interface A {
         const code = await new TestCase(iface).generate(index_1.Role.SERVER);
         chai_1.expect(code['interfaces.ts']).to.contain('foo(): Promise<{ a?: number; }>');
     });
+    it('generates declarations of root level union types', async () => {
+        const iface = 'export type A = { a: number; } | { b: number; };';
+        const code = await new TestCase(iface).generate(index_1.Role.SERVER);
+        chai_1.expect(code['interfaces.ts']).to.contain(iface);
+    });
+    it('generates declarations of root level enums', async () => {
+        const iface = `
+export enum A {
+  A = 'a',
+  B = 'b',
+  C = 'c',
+}`;
+        const code = await new TestCase(iface).generate(index_1.Role.SERVER);
+        chai_1.expect(code['interfaces.ts']).to.contain(iface.trim());
+    });
 });
 //# sourceMappingURL=test_generate.js.map
