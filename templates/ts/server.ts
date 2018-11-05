@@ -37,7 +37,7 @@ export interface {{name}}Handler {
   {{#attributes}}
   readonly {{name}}: {{{type}}};
   {{/attributes}}
-  {{#serverOnlyContext}}extractContext(ctx: Koa.Context): Promise<Context>;{{/serverOnlyContext}}
+  {{#serverOnlyContext}}extractContext(ctx: Koa.Context): Promise<ServerOnlyContext>;{{/serverOnlyContext}}
   {{#methods}}
   {{name}}({{#serverContext}}ctx: Context, {{/serverContext}}{{#parameters}}{{name}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
   {{/methods}}
