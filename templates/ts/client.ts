@@ -55,7 +55,7 @@ export class {{name}}Client {
           {{/clientContext}}
         }
       });
-      return coerceWithSchema(this.schemas.{{name}}, ret, schema) as {{returnType}};
+      return coerceWithSchema(this.schemas.{{name}}, ret, schema) as {{{returnType}}};
     } catch (err) {
       if (err.statusCode === 500 && typeof err.response.body === 'object') {
         const body = err.response.body;
