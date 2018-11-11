@@ -107,7 +107,7 @@ export interface A {
 export enum A {
   A = 'a',
   B = 'b',
-  C = 'c',
+  C_1 = 'c-1',
 }`;
     const code = await new TestCase(iface).generate(Role.SERVER);
     expect(code['interfaces.ts']).to.contain(iface.trim());

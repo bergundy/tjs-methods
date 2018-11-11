@@ -167,7 +167,7 @@ export function transformClassPair([className, { properties, required }]: Pair):
   };
 }
 
-const validEnumKeyRegex = /^[a-z][a-z\d_]*$/i;
+const validEnumKeyRegex = /^[a-z][a-z\d_-]*$/i;
 const isValidEnumKeyRegex = (s) => validEnumKeyRegex.test(s);
 
 export function transform(schema): ServiceSpec {
@@ -193,7 +193,7 @@ export function transform(schema): ServiceSpec {
   }
   const enums = stringEnumTypeDefs.map(([name, { enum: enumDef }]) => ({
     name,
-    def: enumDef.map((value) => ({ key: value.toUpperCase(), value: `'${value}'` })),
+    def: enumDef.map((value) => ({ key: value.toUpperCase().replace(/-/g, '_'), value: `'${value}'` })),
   }));
   const bypassTypes = bypassTypeDefs.map(([name, v]) => ({ name, def: typeToString(v) }));
   const classDefinitions = sortedDefinitions.filter(([_, { properties }]: Pair) => properties);
