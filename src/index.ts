@@ -48,6 +48,7 @@ export async function generate(filePattern: string, role: Role = Role.ALL): Prom
     noExtraProps: true,
     propOrder: true,
     validationKeywords: ['launchType'],
+    include: paths,
   };
 
   const compilerOptions: ts.CompilerOptions = {
