@@ -1,5 +1,6 @@
 // tslint:disable
 import * as request from 'request-promise-native';
+import { CoreOptions, RequestAPI, RequiredUriUrl } from 'request';
 import { fromPairs } from 'lodash';
 import { coerceWithSchema } from './common';
 import {
@@ -19,6 +20,37 @@ import {
   {{/bypassTypes}}
 } from './interfaces';
 
+export type Options = Pick<CoreOptions,
+  'jar' |
+  'auth' |
+  'oauth' |
+  'agent' |
+  'agentOptions' |
+  'agentClass' |
+  'forever' |
+  'headers' |
+  'followRedirect' |
+  'followAllRedirects' |
+  'followOriginalHttpMethod' |
+  'maxRedirects' |
+  'removeRefererHeader' |
+  'pool' |
+  'timeout' |
+  'localAddress' |
+  'proxy' |
+  'tunnel' |
+  'strictSSL' |
+  'rejectUnauthorized' |
+  'time' |
+  'gzip' |
+  'preambleCRLF' |
+  'postambleCRLF' |
+  'withCredentials' |
+  'key' |
+  'cert' |
+  'passphrase' |
+  'ca'>;
+
 {{#clientContext}}
 export type Context = ClientContext;
 {{/clientContext}}
@@ -33,17 +65,19 @@ export class {{name}}Client {
   ];
 
   protected readonly schemas: { [method: string]: any };
+  protected readonly request: RequestAPI<request.RequestPromise, request.RequestPromiseOptions, RequiredUriUrl>;
 
-  public constructor(protected readonly serverUrl: string, protected readonly connectTimeout: number = 3.0) {
+  public constructor(protected readonly serverUrl: string, protected readonly options: Options = {}) {
     this.schemas = fromPairs({{name}}Client.methods.map((m) =>
       [m, schema.definitions.{{name}}.properties[m].properties.returns, schema]));
+    this.request = request.defaults({ ...options, json: true, baseUrl: serverUrl }) as any;
   }
   {{#methods}}
 
-  public async {{name}}({{#clientContext}}ctx: Context ,{{/clientContext}}{{#parameters}}{{name}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}> {
+  public async {{name}}({{#clientContext}}ctx: Context ,{{/clientContext}}{{#parameters}}{{name}}: {{{type}}}, {{/parameters}}options?: Options): Promise<{{{returnType}}}> {
     try {
-      const ret = await request.post(`${this.serverUrl}/{{name}}`, {
-        json: true,
+      const ret = await this.request.post('/{{name}}', {
+        ...options,
         body: {
           args: {
             {{#parameters}}
