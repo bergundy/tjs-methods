@@ -10,10 +10,10 @@ export function coerceWithSchema(schema: any, value: any, defsSchema = {}): any 
     if (Array.isArray(schema.items)) {
       return zip(schema.items, value).map(([s, v]) => coerceWithSchema(s, v, defsSchema));
     }
-    return value.map((v) => coerceWithSchema(schema.items, v, defsSchema));
+    return value.map((v: any) => coerceWithSchema(schema.items, v, defsSchema));
   }
   if (schema.properties) {
-    return mapValues(value, (v, k) => coerceWithSchema(schema.properties[k], v, defsSchema));
+    return mapValues(value, (v: any, k: string) => coerceWithSchema(schema.properties[k], v, defsSchema));
   }
   if (schema.type === 'string' && schema.format === 'date-time') {
     return new Date(value);
@@ -25,7 +25,7 @@ export interface ClassValidator {
   [method: string]: Ajv.ValidateFunction;
 }
 
-export function createClassValidator(schema: { definitions: any }, className, field): ClassValidator {
+export function createClassValidator(schema: { definitions: any }, className: string, field: string): ClassValidator {
   const ajv = new Ajv({ useDefaults: true });
   ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
   for (const [k, v] of Object.entries(schema.definitions)) {

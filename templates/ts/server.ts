@@ -59,7 +59,7 @@ export class {{name}}Router {
   ) {
     const def = schema.definitions.{{name}};
     this.koaRouter = new Router();
-    this.schemas = fromPairs({{name}}Router.methods.map((m) =>
+    this.schemas = fromPairs({{name}}Router.methods.map((m: string) =>
       [m, def.properties[m].properties.params, schema]));
 
     this.koaRouter.use(errors({

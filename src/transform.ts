@@ -1,4 +1,4 @@
-import { first, fromPairs, isPlainObject, flatMap, mapValues, partition } from 'lodash';
+import { first, isPlainObject, flatMap, partition } from 'lodash';
 import * as toposort from 'toposort';
 
 type Pair = [string, any];

@@ -7,15 +7,20 @@ const path = require("path");
 const yargs = require("yargs");
 const rmrf = require("rmfr");
 const index_1 = require("./index");
-const publish_1 = require("./publish");
+const types_1 = require("./types");
+const output_1 = require("./output");
 function mktemp() {
     return path.join('/tmp', `generated-${crypto_1.randomBytes(20).toString('hex')}`);
 }
 const argv = yargs
-    .command('$0 <pattern>', 'launch code generator', (y) => y
+    .command('$0 <package> <pattern>', 'launch code generator', (y) => y
     .positional('pattern', {
     type: 'string',
     describe: 'Files matching this pattern will be evaluated as input',
+})
+    .option('package', {
+    type: 'string',
+    describe: 'Publish as npm package with format of <packageName>@<version> (e.g. myservice@1.2.3)',
 }))
     .option('output', {
     type: 'string',
@@ -25,14 +30,14 @@ const argv = yargs
     .option('role', {
     type: 'string',
     alias: 'r',
-    default: index_1.Role.ALL,
-    choices: Object.values(index_1.Role),
+    default: types_1.Role.ALL,
+    choices: Object.values(types_1.Role),
     describe: 'Generate specific role',
 })
     .option('publish', {
-    type: 'string',
+    type: 'boolean',
     alias: 'p',
-    describe: 'Publish as npm package with format of <packageName>@<version> (e.g. myservice@1.2.3)',
+    describe: 'Publish as package to npm',
 })
     .option('publish-tag', {
     type: 'string',
@@ -40,40 +45,36 @@ const argv = yargs
     describe: 'When `publish` is specified, publish to a specific tag (see `npm publish --tag`)',
 })
     .argv;
-async function genCode(pattern, genPath, role) {
-    const st = await fs_1.stat(genPath);
-    if (!st.isDirectory()) {
-        throw new Error(`output dir: ${genPath} is not a directory`);
+async function main({ pattern, 'package': pkgName, output, role, publish, 'publish-tag': tag }) {
+    const parts = pkgName.split('@');
+    if (parts.length < 2) {
+        throw new Error(`publish param should have a @ character for version, got ${publish}`);
     }
-    const schemaCode = await index_1.generate(pattern, role);
-    await Promise.all(Object.entries(schemaCode).map(([n, c]) => fs_1.writeFile(path.join(genPath, n), c)));
-}
-async function main({ pattern, output, role, publish, 'publish-tag': tag }) {
-    if (output) {
-        await genCode(pattern, output, role);
-    }
-    else if (publish) {
-        if (!role || role === index_1.Role.ALL) {
+    const name = parts.slice(0, -1).join('@');
+    const version = parts[parts.length - 1];
+    if (publish) {
+        if (!role || role === types_1.Role.ALL) {
             throw new Error('Must specify `role` (client or server) option with `publish`');
         }
-        const parts = publish.split('@');
-        if (parts.length < 2) {
-            throw new Error(`publish param should have a @ character for version, got ${publish}`);
-        }
-        const genPath = mktemp();
+    }
+    const genPath = output || mktemp();
+    if (genPath !== output) {
         await fs_1.mkdir(genPath);
-        try {
-            await genCode(pattern, genPath, role);
-            const name = parts.slice(0, -1).join('@');
-            const version = parts[parts.length - 1];
-            await publish_1.publish(genPath, role, name, version, tag);
-        }
-        finally {
-            await rmrf(genPath);
+    }
+    try {
+        const generator = await output_1.TSOutput.create(genPath);
+        const generated = await index_1.generate(pattern, role);
+        await generator.write(name, version, generated, role);
+        await generator.compile();
+        process.stdout.write(`Generated code in: ${genPath}\n`);
+        if (publish) {
+            await generator.publish(tag);
         }
     }
-    else {
-        throw new Error('Must specify one of `publish` or `output`');
+    finally {
+        if (genPath !== output) {
+            await rmrf(genPath);
+        }
     }
 }
 main(argv).catch((err) => {

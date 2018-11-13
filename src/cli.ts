@@ -1,11 +1,12 @@
 import { format } from 'util';
 import { randomBytes } from 'crypto';
-import { writeFile, stat, mkdir } from 'mz/fs';
+import { mkdir } from 'mz/fs';
 import * as path from 'path';
 import * as yargs from 'yargs';
 import * as rmrf from 'rmfr';
-import { generate, Role } from './index';
-import { publish as publishPackage } from './publish';
+import { generate } from './index';
+import { Role } from './types';
+import { TSOutput } from './output';
 
 function mktemp(): string {
   return path.join('/tmp', `generated-${randomBytes(20).toString('hex')}`);
@@ -14,16 +15,21 @@ function mktemp(): string {
 interface Args {
   pattern: string;
   output?: string;
-  role?: Role;
-  publish?: string;
+  role: Role;
+  publish: boolean;
+  'package': string;
   'publish-tag'?: string;
 }
 
 const argv = yargs
-  .command('$0 <pattern>', 'launch code generator', (y) => y
+  .command('$0 <package> <pattern>', 'launch code generator', (y) => y
     .positional('pattern',  {
       type: 'string',
       describe: 'Files matching this pattern will be evaluated as input',
+    })
+    .option('package',  {
+      type: 'string',
+      describe: 'Publish as npm package with format of <packageName>@<version> (e.g. myservice@1.2.3)',
     })
   )
   .option('output',  {
@@ -39,9 +45,9 @@ const argv = yargs
     describe: 'Generate specific role',
   })
   .option('publish',  {
-    type: 'string',
+    type: 'boolean',
     alias: 'p',
-    describe: 'Publish as npm package with format of <packageName>@<version> (e.g. myservice@1.2.3)',
+    describe: 'Publish as package to npm',
   })
   .option('publish-tag',  {
     type: 'string',
@@ -50,40 +56,36 @@ const argv = yargs
   })
   .argv;
 
-async function genCode(pattern: string, genPath: string, role?: Role) {
-  const st = await stat(genPath);
-  if (!st.isDirectory()) {
-    throw new Error(`output dir: ${genPath} is not a directory`);
+async function main({ pattern, 'package': pkgName, output, role, publish, 'publish-tag': tag }: Args) {
+  const parts = pkgName.split('@');
+  if (parts.length < 2) {
+    throw new Error(`publish param should have a @ character for version, got ${publish}`);
   }
-  const schemaCode = await generate(pattern, role);
-  await Promise.all(Object.entries(schemaCode).map(
-    ([n, c]) => writeFile(path.join(genPath, n), c)
-  ));
-}
+  const name = parts.slice(0, -1).join('@');
+  const version = parts[parts.length - 1];
 
-async function main({ pattern, output, role, publish, 'publish-tag': tag }: Args) {
-  if (output) {
-    await genCode(pattern, output, role);
-  } else if (publish) {
+  if (publish) {
     if (!role || role === Role.ALL) {
       throw new Error('Must specify `role` (client or server) option with `publish`');
     }
-    const parts = publish.split('@');
-    if (parts.length < 2) {
-      throw new Error(`publish param should have a @ character for version, got ${publish}`);
-    }
-    const genPath = mktemp();
+  }
+  const genPath = output || mktemp();
+  if (genPath !== output) {
     await mkdir(genPath);
-    try {
-      await genCode(pattern, genPath, role);
-      const name = parts.slice(0, -1).join('@');
-      const version = parts[parts.length - 1];
-      await publishPackage(genPath, role as Role.CLIENT | Role.SERVER, name, version, tag);
-    } finally {
+  }
+  try {
+    const generator = await TSOutput.create(genPath);
+    const generated = await generate(pattern, role);
+    await generator.write(name, version, generated, role);
+    await generator.compile();
+    process.stdout.write(`Generated code in: ${genPath}\n`);
+    if (publish) {
+      await generator.publish(tag);
+    }
+  } finally {
+    if (genPath !== output) {
       await rmrf(genPath);
     }
-  } else {
-    throw new Error('Must specify one of `publish` or `output`');
   }
 }
 

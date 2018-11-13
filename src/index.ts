@@ -1,44 +1,84 @@
 import { readFile, readdir } from 'mz/fs';
-import { zip, fromPairs, pickBy } from 'lodash';
+import { zip, fromPairs, merge } from 'lodash';
 import * as glob from 'glob';
 import * as ts from 'typescript';
 import * as tjs from 'typescript-json-schema';
 import * as mustache from 'mustache';
 import { promisify } from 'util';
 import * as path from 'path';
+import { GeneratedCode, Package, Role } from './types';
 import { transform } from './transform';
 
 const tmplPath = (name) => path.join(__dirname, '..', 'templates', 'ts', name);
 const libPath = path.join(__dirname, '..', 'src', 'lib');
-const names = ['interfaces', 'client', 'server'];
-
-export interface GeneratedCode {
-  [name: string]: string;
-}
-
-export enum Role {
-  ALL = 'all',
-  CLIENT = 'client',
-  SERVER = 'server',
-}
-
-export class RoleFilter {
-  public static [Role.ALL](_: string) {
-    return true;
-  }
-
-  public static [Role.CLIENT](f: string) {
-    return !f.includes('server');
-  }
-
-  public static [Role.SERVER](f: string) {
-    return !f.includes('client');
-  }
-}
 
 async function getLib(): Promise<string[]> {
   const files = await readdir(libPath);
   return files.filter((f) => !f.startsWith('test'));
+}
+
+function getTemplateNames(role: Role) {
+  switch (role) {
+    case Role.SERVER:
+      return ['interfaces', 'server'];
+    case Role.CLIENT:
+      return ['interfaces', 'client'];
+    case Role.ALL:
+      return ['interfaces', 'client', 'server'];
+  }
+}
+
+function getPackage(role: Role): Package {
+  const base = {
+    dependencies: {
+      ajv: '^6.5.5',
+      lodash: '^4.17.11',
+    },
+    devDependencies: {
+      '@types/ajv': '^1.0.0',
+      '@types/lodash': '^4.14.118',
+      '@types/node': '10.12.6',
+    },
+  };
+
+  const serverOnly = {
+    dependencies: {
+      koa: '^2.5.1',
+      'koa-bodyparser': '^4.2.1',
+      'koa-json-error': '^3.1.2',
+      'koa-router': '^7.4.0',
+    },
+    devDependencies: {
+      '@types/koa': '2.0.46',
+      '@types/koa-router': '7.0.33',
+      '@types/koa-bodyparser': '5.0.1',
+      '@types/koa-json-error': '3.1.2',
+    },
+  };
+
+  const clientOnly = {
+    dependencies: {
+      request: '^2.88.0',
+      'request-promise-native': '^1.0.5',
+    },
+    devDependencies: {
+      '@types/request': '^2.48.1',
+      '@types/request-promise-native': '^1.0.15',
+    },
+    // TODO: decide whether to include this, maybe as peerDependencies
+    // optionalDependencies: {
+    //   '@types/request': '^2.48.1',
+    // },
+  };
+
+  switch (role) {
+    case Role.SERVER:
+      return merge(base, serverOnly);
+    case Role.CLIENT:
+      return merge(base, clientOnly);
+    case Role.ALL:
+      return merge(base, clientOnly, serverOnly);
+  }
 }
 
 export async function generate(filePattern: string, role: Role = Role.ALL): Promise<GeneratedCode> {
@@ -65,17 +105,13 @@ export async function generate(filePattern: string, role: Role = Role.ALL): Prom
   const libContents = await Promise.all(libFiles.map((n) => readFile(path.join(libPath, n), 'utf-8')));
 
   const program = ts.createProgram(paths, compilerOptions);
-  const generator = tjs.buildGenerator(program, settings, paths)!;
   const schema = tjs.generateSchema(program, '*', settings, paths);
   const spec = transform(schema);
-  const genFiles = names.map((n) => `${n}.ts`);
+  const genFiles = getTemplateNames(role).map((n) => `${n}.ts`);
   const templates = await Promise.all(genFiles.map((n) => readFile(tmplPath(n), 'utf-8')));
   const rendered = templates.map((t) => mustache.render(t, spec));
-  return pickBy({
-    clientDeps: ['lodash', 'ajv', 'request-promise-native', 'request', ''].join('\n'),
-    serverDeps: ['lodash', 'ajv', 'koa', 'koa-router', 'koa-json-error', 'koa-bodyparser', ''].join('\n'),
-    ...fromPairs(
-      zip([...libFiles, ...genFiles], [...libContents, ...rendered])
-    ),
-  }, (v, k) => RoleFilter[role](k)) as GeneratedCode;
+  return {
+    pkg: getPackage(role),
+    code: fromPairs(zip([...libFiles, ...genFiles], [...libContents, ...rendered])),
+  };
 }

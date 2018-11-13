@@ -4,8 +4,9 @@ import { promisify } from 'util';
 import * as path from 'path';
 import { randomBytes } from 'crypto';
 import * as rmrf from 'rimraf';
-import { writeFile, unlink, mkdir } from 'mz/fs';
-import { generate, GeneratedCode, Role } from './index';
+import { writeFile, mkdir } from 'mz/fs';
+import { GeneratedCode, Role } from './types';
+import { generate } from './index';
 
 function mktemp(): string {
   return path.join(__dirname, '..', 'tmpTestCases', `test-${randomBytes(20).toString('hex')}`);
@@ -32,7 +33,7 @@ class TestCase {
 
 describe('generate', () => {
   it('generates only client code when requested', async () => {
-    const code = await new TestCase(`
+    const { code, pkg } = await new TestCase(`
 export interface Test {
   bar: {
     params: {
@@ -44,15 +45,17 @@ export interface Test {
     ).generate(Role.CLIENT);
     expect(Object.keys(code).sort()).to.eql([
       'client.ts',
-      'clientDeps',
       'common.ts',
       'interfaces.ts',
       'koaMW.ts',
     ]);
+
+    expect(pkg.dependencies.koa).to.be.a('undefined');
+    expect(pkg.dependencies.request).to.be.a('string');
   });
 
   it('generates only server code when requested', async () => {
-    const code = await new TestCase(`
+    const { code, pkg } = await new TestCase(`
 export interface Test {
   bar: {
     params: {
@@ -67,8 +70,10 @@ export interface Test {
       'interfaces.ts',
       'koaMW.ts',
       'server.ts',
-      'serverDeps',
     ]);
+
+    expect(pkg.dependencies.koa).to.be.a('string');
+    expect(pkg.dependencies.request).to.be.a('undefined');
   });
 
   it('respects optional params', async () => {
@@ -77,7 +82,7 @@ export interface A {
   readonly optional?: number;
   readonly required: number;
 }`;
-    const code = await new TestCase(iface).generate(Role.SERVER);
+    const { code } = await new TestCase(iface).generate(Role.SERVER);
     expect(code['interfaces.ts']).to.contain(iface.trim());
   });
 
@@ -92,13 +97,13 @@ export interface A {
     };
   };
 }`;
-    const code = await new TestCase(iface).generate(Role.SERVER);
+    const { code } = await new TestCase(iface).generate(Role.SERVER);
     expect(code['interfaces.ts']).to.contain('foo(): Promise<{ a?: number; }>');
   });
 
   it('generates declarations of root level union types', async () => {
     const iface = 'export type A = { a: number; } | { b: number; };';
-    const code = await new TestCase(iface).generate(Role.SERVER);
+    const { code } = await new TestCase(iface).generate(Role.SERVER);
     expect(code['interfaces.ts']).to.contain(iface);
   });
 
@@ -109,7 +114,7 @@ export enum A {
   B = 'b',
   C_1 = 'c-1',
 }`;
-    const code = await new TestCase(iface).generate(Role.SERVER);
+    const { code } = await new TestCase(iface).generate(Role.SERVER);
     expect(code['interfaces.ts']).to.contain(iface.trim());
   });
 });

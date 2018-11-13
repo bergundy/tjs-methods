@@ -1,5 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
+const lodash_1 = require("lodash");
 const common_1 = require("./common");
 function validate(schema, className) {
     const contextValidator = schema.definitions.ClientContext
@@ -7,6 +8,11 @@ function validate(schema, className) {
     const validators = common_1.createClassValidator(schema, className, 'params');
     return async (ctx, next) => {
         const { method } = ctx.params;
+        if (!lodash_1.isPlainObject(ctx.request.body)) {
+            ctx.throw(400, 'Bad Request', {
+                errors: [{ message: 'Could not parse body', method }],
+            });
+        }
         const { context, args } = ctx.request.body;
         const validator = validators[method];
         if (!validator) {

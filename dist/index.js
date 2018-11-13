@@ -8,33 +8,70 @@ const tjs = require("typescript-json-schema");
 const mustache = require("mustache");
 const util_1 = require("util");
 const path = require("path");
+const types_1 = require("./types");
 const transform_1 = require("./transform");
 const tmplPath = (name) => path.join(__dirname, '..', 'templates', 'ts', name);
 const libPath = path.join(__dirname, '..', 'src', 'lib');
-const names = ['interfaces', 'client', 'server'];
-var Role;
-(function (Role) {
-    Role["ALL"] = "all";
-    Role["CLIENT"] = "client";
-    Role["SERVER"] = "server";
-})(Role = exports.Role || (exports.Role = {}));
-class RoleFilter {
-    static [Role.ALL](_) {
-        return true;
-    }
-    static [Role.CLIENT](f) {
-        return !f.includes('server');
-    }
-    static [Role.SERVER](f) {
-        return !f.includes('client');
-    }
-}
-exports.RoleFilter = RoleFilter;
 async function getLib() {
     const files = await fs_1.readdir(libPath);
     return files.filter((f) => !f.startsWith('test'));
 }
-async function generate(filePattern, role = Role.ALL) {
+function getTemplateNames(role) {
+    switch (role) {
+        case types_1.Role.SERVER:
+            return ['interfaces', 'server'];
+        case types_1.Role.CLIENT:
+            return ['interfaces', 'client'];
+        case types_1.Role.ALL:
+            return ['interfaces', 'client', 'server'];
+    }
+}
+function getPackage(role) {
+    const base = {
+        dependencies: {
+            ajv: '^6.5.5',
+            lodash: '^4.17.11',
+        },
+        devDependencies: {
+            '@types/ajv': '^1.0.0',
+            '@types/lodash': '^4.14.118',
+            '@types/node': '10.12.6',
+        },
+    };
+    const serverOnly = {
+        dependencies: {
+            koa: '^2.5.1',
+            'koa-bodyparser': '^4.2.1',
+            'koa-json-error': '^3.1.2',
+            'koa-router': '^7.4.0',
+        },
+        devDependencies: {
+            '@types/koa': '2.0.46',
+            '@types/koa-router': '7.0.33',
+            '@types/koa-bodyparser': '5.0.1',
+            '@types/koa-json-error': '3.1.2',
+        },
+    };
+    const clientOnly = {
+        dependencies: {
+            request: '^2.88.0',
+            'request-promise-native': '^1.0.5',
+        },
+        devDependencies: {
+            '@types/request': '^2.48.1',
+            '@types/request-promise-native': '^1.0.15',
+        },
+    };
+    switch (role) {
+        case types_1.Role.SERVER:
+            return lodash_1.merge(base, serverOnly);
+        case types_1.Role.CLIENT:
+            return lodash_1.merge(base, clientOnly);
+        case types_1.Role.ALL:
+            return lodash_1.merge(base, clientOnly, serverOnly);
+    }
+}
+async function generate(filePattern, role = types_1.Role.ALL) {
     const paths = await util_1.promisify(glob)(filePattern);
     const settings = {
         required: true,
@@ -55,13 +92,15 @@ async function generate(filePattern, role = Role.ALL) {
     const libFiles = await getLib();
     const libContents = await Promise.all(libFiles.map((n) => fs_1.readFile(path.join(libPath, n), 'utf-8')));
     const program = ts.createProgram(paths, compilerOptions);
-    const generator = tjs.buildGenerator(program, settings, paths);
     const schema = tjs.generateSchema(program, '*', settings, paths);
     const spec = transform_1.transform(schema);
-    const genFiles = names.map((n) => `${n}.ts`);
+    const genFiles = getTemplateNames(role).map((n) => `${n}.ts`);
     const templates = await Promise.all(genFiles.map((n) => fs_1.readFile(tmplPath(n), 'utf-8')));
     const rendered = templates.map((t) => mustache.render(t, spec));
-    return lodash_1.pickBy(Object.assign({ clientDeps: ['lodash', 'ajv', 'request-promise-native', 'request', ''].join('\n'), serverDeps: ['lodash', 'ajv', 'koa', 'koa-router', 'koa-json-error', 'koa-bodyparser', ''].join('\n') }, lodash_1.fromPairs(lodash_1.zip([...libFiles, ...genFiles], [...libContents, ...rendered]))), (v, k) => RoleFilter[role](k));
+    return {
+        pkg: getPackage(role),
+        code: lodash_1.fromPairs(lodash_1.zip([...libFiles, ...genFiles], [...libContents, ...rendered])),
+    };
 }
 exports.generate = generate;
 //# sourceMappingURL=index.js.map

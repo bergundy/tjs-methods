@@ -1,26 +1,15 @@
-import { expect } from 'chai';
 import 'chai-as-promised';
 import 'mocha';
 import { promisify } from 'util';
 import * as path from 'path';
 import { randomBytes } from 'crypto';
 import * as rmrf from 'rimraf';
-import { writeFile, unlink, mkdir } from 'mz/fs';
+import { writeFile, mkdir } from 'mz/fs';
 import { exec } from 'mz/child_process';
 import { generate } from './index';
 
 function mktemp(): string {
   return path.join(__dirname, '..', 'tmpTestCases', `test-${randomBytes(20).toString('hex')}`);
-}
-
-async function *writeTempFile(contents: string): AsyncIterableIterator<string> {
-  const filename = mktemp();
-  await writeFile(filename, contents);
-  try {
-    yield filename;
-  } finally {
-    await unlink(filename);
-  }
 }
 
 class TestCase {
@@ -63,7 +52,7 @@ main().catch((err) => {
     await mkdir(this.dir);
     const schemaPath = path.join(this.dir, 'schema.ts');
     await writeFile(schemaPath, this.schema);
-    const schemaCode = await generate(schemaPath);
+    const { code: schemaCode } = await generate(schemaPath);
     await Promise.all(Object.entries(schemaCode).map(
       ([n, c]) => writeFile(path.join(this.dir, n), c)
     ));
@@ -103,7 +92,7 @@ ${this.test}`);
   }
 }
 
-describe('generate', () => {
+describe('rpc', () => {
   it('creates valid TS client / server code', async () => {
     const schema = `
 export interface Test {

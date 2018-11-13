@@ -25,7 +25,7 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
     ```
 1. Compile the schema.
     ```bash
-    mkdir -p ./generated && launch interface.ts -o ./generated
+    mkdir -p ./generated && launch example@0.0.1 interface.ts -o ./generated
     ```
 1. Write the server code.
 
@@ -62,11 +62,8 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
 
     main();
     ```
-1. Install the dependencies
-    ```bash
-    cat generated/{clientDeps,serverDeps} | sort -u | xargs npm i
-    ```
 1. Run (make sure `tsconfig.json` is properly configured for node and is present in the current directory)
+    TODO: Test this process
     ```bash
     tsc
     ./server.js &
@@ -84,7 +81,7 @@ The heavy lifting is done by [typescript-json-schema](https://github.com/YousefE
 Launch can create an npm package for you and publish it if instead of specifying an output dir you give it a publish target.
 In the following example `launch` will publish the generated server files to npm as example-server@0.0.1:
 ```bash
-launch -p example@0.0.1 -r server interface.ts
+launch -p -r server example@0.0.1 interface.ts
 ```
 
 ### Calling with curl # TODO

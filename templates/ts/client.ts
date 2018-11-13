@@ -68,7 +68,7 @@ export class {{name}}Client {
   protected readonly request: RequestAPI<request.RequestPromise, request.RequestPromiseOptions, RequiredUriUrl>;
 
   public constructor(protected readonly serverUrl: string, protected readonly options: Options = {}) {
-    this.schemas = fromPairs({{name}}Client.methods.map((m) =>
+    this.schemas = fromPairs({{name}}Client.methods.map((m: string) =>
       [m, schema.definitions.{{name}}.properties[m].properties.returns, schema]));
     this.request = request.defaults({ ...options, json: true, baseUrl: serverUrl }) as any;
   }
