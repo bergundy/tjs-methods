@@ -59,7 +59,7 @@ const argv = yargs
 async function main({ pattern, 'package': pkgName, output, role, publish, 'publish-tag': tag }: Args) {
   const parts = pkgName.split('@');
   if (parts.length < 2) {
-    throw new Error(`publish param should have a @ character for version, got ${publish}`);
+    throw new Error(`package param should have a @ character for version, got ${pkgName}`);
   }
   const name = parts.slice(0, -1).join('@');
   const version = parts[parts.length - 1];
