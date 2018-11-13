@@ -1,7 +1,6 @@
 // tslint:disable
 import * as request from 'request-promise-native';
 import { CoreOptions, RequestAPI, RequiredUriUrl } from 'request';
-import { fromPairs } from 'lodash';
 import { coerceWithSchema } from './common';
 import {
   schema,
@@ -64,12 +63,11 @@ export class {{name}}Client {
     {{/methods}}
   ];
 
-  protected readonly schemas: { [method: string]: any };
+  protected readonly props = schema.definitions.{{{name}}}.properties;
+
   protected readonly request: RequestAPI<request.RequestPromise, request.RequestPromiseOptions, RequiredUriUrl>;
 
   public constructor(protected readonly serverUrl: string, protected readonly options: Options = {}) {
-    this.schemas = fromPairs({{name}}Client.methods.map((m: string) =>
-      [m, schema.definitions.{{name}}.properties[m].properties.returns, schema]));
     this.request = request.defaults({ ...options, json: true, baseUrl: serverUrl }) as any;
   }
   {{#methods}}
@@ -89,7 +87,7 @@ export class {{name}}Client {
           {{/clientContext}}
         }
       });
-      return coerceWithSchema(this.schemas.{{name}}, ret, schema) as {{{returnType}}};
+      return coerceWithSchema(this.props.{{{name}}}.properties.returns, ret, schema) as {{{returnType}}};
     } catch (err) {
       if (err.statusCode === 500 && typeof err.response.body === 'object') {
         const body = err.response.body;

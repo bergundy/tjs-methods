@@ -4,7 +4,6 @@ import * as Router from 'koa-router';
 import * as http from 'http';
 import * as bodyParser from 'koa-bodyparser';
 import * as errors from 'koa-json-error';
-import { fromPairs } from 'lodash';
 import { validate } from './koaMW';
 import { coerceWithSchema } from './common';
 import {
@@ -50,17 +49,14 @@ export class {{name}}Router {
     {{/methods}}
   ];
 
-  protected readonly schemas: { [method: string]: any };
+  protected readonly props = schema.definitions.{{{name}}}.properties;
   public readonly koaRouter: Router;
 
   constructor(
     protected readonly handler: {{name}}Handler,
     stackTraceInError = false,
   ) {
-    const def = schema.definitions.{{name}};
     this.koaRouter = new Router();
-    this.schemas = fromPairs({{name}}Router.methods.map((m: string) =>
-      [m, def.properties[m].properties.params, schema]));
 
     this.koaRouter.use(errors({
       postFormat: (e, { stack, knownError, name, ...rest }) => {
@@ -75,8 +71,8 @@ export class {{name}}Router {
     {{#methods}}
     this.koaRouter.post('/{{name}}', async (ctx) => {
       const { context: clientContextFromBody, args } = (ctx.request as any).body;
-      const coerced = coerceWithSchema(this.schemas.{{name}}, args, schema);
-      const params = def.properties.{{name}}.properties.params;
+      const params = this.props.{{name}}.properties.params;
+      const coerced = coerceWithSchema(params, args, schema);
       const order = (params as any).propertyOrder || [];
       const sortedArgs = Object.entries(coerced).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b)).map(([_, v]) => v);
       const method = this.handler.{{name}}.bind(this.handler);
