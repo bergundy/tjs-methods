@@ -42,7 +42,6 @@ export interface Test {
             'client.ts',
             'common.ts',
             'interfaces.ts',
-            'koaMW.ts',
         ]);
         chai_1.expect(pkg.dependencies.koa).to.be.a('undefined');
         chai_1.expect(pkg.dependencies.request).to.be.a('string');

@@ -47,7 +47,6 @@ export interface Test {
       'client.ts',
       'common.ts',
       'interfaces.ts',
-      'koaMW.ts',
     ]);
 
     expect(pkg.dependencies.koa).to.be.a('undefined');

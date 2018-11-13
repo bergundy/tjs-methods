@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const path = require("path");
 const fs_1 = require("mz/fs");
-const eventToPromise = require("event-to-promise");
 const child_process_1 = require("child_process");
 const types_1 = require("./types");
 const tsconfig = {
@@ -13,10 +12,7 @@ const tsconfig = {
         module: 'commonjs',
         moduleResolution: 'node',
         emitDecoratorMetadata: true,
-        checkJs: false,
-        allowJs: false,
         experimentalDecorators: true,
-        downlevelIteration: true,
         sourceMap: true,
         declaration: true,
         strict: true,
@@ -29,7 +25,16 @@ const tsconfig = {
         'node_modules',
     ],
 };
-const spawn = (command, args, options) => eventToPromise(child_process_1.spawn(command, args, options), 'exit');
+const spawn = (command, args, options) => new Promise((resolve, reject) => {
+    child_process_1.spawn(command, args, options).on('close', (code) => {
+        if (code === 0) {
+            resolve(code);
+        }
+        else {
+            reject(new Error(`command: '${command} ${args}' failed process failed with exit code: ${code}`));
+        }
+    });
+});
 class TSOutput {
     constructor(genPath) {
         this.genPath = genPath;

@@ -1,6 +1,5 @@
 import * as path from 'path';
 import { mkdir, stat, writeFile } from 'mz/fs';
-import * as eventToPromise from 'event-to-promise';
 import { spawn as origSpawn, SpawnOptions } from 'child_process';
 import { GeneratedCode, Role } from './types';
 
@@ -12,10 +11,7 @@ const tsconfig = {
     module: 'commonjs',
     moduleResolution: 'node',
     emitDecoratorMetadata: true,
-    checkJs: false,
-    allowJs: false,
     experimentalDecorators: true,
-    downlevelIteration: true,
     sourceMap: true,
     declaration: true,
     strict: true,
@@ -29,8 +25,19 @@ const tsconfig = {
   ],
 };
 
-const spawn = (command: string, args?: ReadonlyArray<string>, options?: SpawnOptions) =>
-  eventToPromise(origSpawn(command, args, options), 'exit');
+const spawn = (
+  command: string,
+  args?: ReadonlyArray<string>,
+  options?: SpawnOptions
+): Promise<number> => new Promise((resolve, reject) => {
+  origSpawn(command, args, options).on('close', (code: number) => {
+    if (code === 0) {
+      resolve(code);
+    } else {
+      reject(new Error(`command: '${command} ${args}' failed process failed with exit code: ${code}`));
+    }
+  });
+});
 
 export class TSOutput {
   protected npm: (...args: string[]) => Promise<number>;

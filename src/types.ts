@@ -5,7 +5,7 @@ export interface Package {
   devDependencies: {
     [name: string]: string;
   };
-  optionalDependencies?: {
+  peerDependencies?: {
     [name: string]: string;
   };
 }

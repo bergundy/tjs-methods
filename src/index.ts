@@ -1,4 +1,4 @@
-import { readFile, readdir } from 'mz/fs';
+import { readFile } from 'mz/fs';
 import { zip, fromPairs, merge } from 'lodash';
 import * as glob from 'glob';
 import * as ts from 'typescript';
@@ -12,9 +12,14 @@ import { transform } from './transform';
 const tmplPath = (name) => path.join(__dirname, '..', 'templates', 'ts', name);
 const libPath = path.join(__dirname, '..', 'src', 'lib');
 
-async function getLib(): Promise<string[]> {
-  const files = await readdir(libPath);
-  return files.filter((f) => !f.startsWith('test'));
+function getLib(role: Role): string[] {
+  switch (role) {
+    case Role.ALL:
+    case Role.SERVER:
+      return ['common.ts', 'koaMW.ts'];
+    case Role.CLIENT:
+      return ['common.ts'];
+  }
 }
 
 function getTemplateNames(role: Role) {
@@ -59,15 +64,11 @@ function getPackage(role: Role): Package {
     dependencies: {
       request: '^2.88.0',
       'request-promise-native': '^1.0.5',
-    },
-    devDependencies: {
+      // These types could have been peer dependencies but we decided
+      // to put these here to simplify usage of generate code
       '@types/request': '^2.48.1',
       '@types/request-promise-native': '^1.0.15',
     },
-    // TODO: decide whether to include this, maybe as peerDependencies
-    // optionalDependencies: {
-    //   '@types/request': '^2.48.1',
-    // },
   };
 
   switch (role) {
@@ -100,7 +101,7 @@ export async function generate(filePattern: string, role: Role = Role.ALL): Prom
     allowUnusedLabels: true,
   };
 
-  const libFiles = await getLib();
+  const libFiles = getLib(role);
   const libContents = await Promise.all(libFiles.map((n) => readFile(path.join(libPath, n), 'utf-8')));
 
   const program = ts.createProgram(paths, compilerOptions);

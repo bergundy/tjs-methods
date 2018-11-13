@@ -12,9 +12,14 @@ const types_1 = require("./types");
 const transform_1 = require("./transform");
 const tmplPath = (name) => path.join(__dirname, '..', 'templates', 'ts', name);
 const libPath = path.join(__dirname, '..', 'src', 'lib');
-async function getLib() {
-    const files = await fs_1.readdir(libPath);
-    return files.filter((f) => !f.startsWith('test'));
+function getLib(role) {
+    switch (role) {
+        case types_1.Role.ALL:
+        case types_1.Role.SERVER:
+            return ['common.ts', 'koaMW.ts'];
+        case types_1.Role.CLIENT:
+            return ['common.ts'];
+    }
 }
 function getTemplateNames(role) {
     switch (role) {
@@ -33,7 +38,6 @@ function getPackage(role) {
             lodash: '^4.17.11',
         },
         devDependencies: {
-            '@types/ajv': '^1.0.0',
             '@types/lodash': '^4.14.118',
             '@types/node': '10.12.6',
         },
@@ -58,6 +62,10 @@ function getPackage(role) {
             'request-promise-native': '^1.0.5',
         },
         devDependencies: {
+            '@types/request': '^2.48.1',
+            '@types/request-promise-native': '^1.0.15',
+        },
+        peerDependencies: {
             '@types/request': '^2.48.1',
             '@types/request-promise-native': '^1.0.15',
         },
@@ -89,7 +97,7 @@ async function generate(filePattern, role = types_1.Role.ALL) {
         module: ts.ModuleKind.CommonJS,
         allowUnusedLabels: true,
     };
-    const libFiles = await getLib();
+    const libFiles = getLib(role);
     const libContents = await Promise.all(libFiles.map((n) => fs_1.readFile(path.join(libPath, n), 'utf-8')));
     const program = ts.createProgram(paths, compilerOptions);
     const schema = tjs.generateSchema(program, '*', settings, paths);
