@@ -35,7 +35,6 @@ function getPackage(role: Role): Package {
       lodash: '^4.17.11',
     },
     devDependencies: {
-      '@types/ajv': '^1.0.0',
       '@types/lodash': '^4.14.118',
       '@types/node': '10.12.6',
     },
