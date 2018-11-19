@@ -60,12 +60,8 @@ function getPackage(role) {
         dependencies: {
             request: '^2.88.0',
             'request-promise-native': '^1.0.5',
-        },
-        devDependencies: {
-            '@types/request': '^2.48.1',
-            '@types/request-promise-native': '^1.0.15',
-        },
-        peerDependencies: {
+            // These types could have been peer dependencies but we decided
+            // to put these here to simplify usage of generate code
             '@types/request': '^2.48.1',
             '@types/request-promise-native': '^1.0.15',
         },
