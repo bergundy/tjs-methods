@@ -34,6 +34,9 @@ function getTemplateNames(role: Role) {
 }
 
 function getPackage(role: Role): Package {
+  // @types packages could have been peer dependencies but we decided
+  // to put these here to simplify usage of generate code
+
   const base = {
     dependencies: {
       ajv: '^6.5.5',
@@ -41,33 +44,36 @@ function getPackage(role: Role): Package {
     },
     devDependencies: {
       '@types/lodash': '^4.14.118',
-      '@types/node': '10.12.6',
+      '@types/node': '^10.12.6',
     },
   };
 
   const serverOnly = {
     dependencies: {
+      '@types/koa': '^2.0.46',
+      '@types/koa-bodyparser': '^5.0.1',
+      '@types/koa-router': '^7.0.33',
       koa: '^2.5.1',
       'koa-bodyparser': '^4.2.1',
       'koa-json-error': '^3.1.2',
       'koa-router': '^7.4.0',
     },
     devDependencies: {
-      '@types/koa': '2.0.46',
-      '@types/koa-router': '7.0.33',
-      '@types/koa-bodyparser': '5.0.1',
-      '@types/koa-json-error': '3.1.2',
+      '@types/koa-json-error': '^3.1.2',
+    },
+    // Only peer dependency and common in typescript packages
+    // It's is left as a peerDependency and not a dependency because it depends on node version
+    peerDependencies: {
+      '@types/node': '>=8.0.0',
     },
   };
 
   const clientOnly = {
     dependencies: {
-      request: '^2.88.0',
-      'request-promise-native': '^1.0.5',
-      // These types could have been peer dependencies but we decided
-      // to put these here to simplify usage of generate code
       '@types/request': '^2.48.1',
       '@types/request-promise-native': '^1.0.15',
+      request: '^2.88.0',
+      'request-promise-native': '^1.0.5',
     },
   };
 
