@@ -62,7 +62,7 @@ function getPackage(role: Role): Package {
       '@types/koa-json-error': '^3.1.2',
     },
     // Only peer dependency and common in typescript packages
-    // It's is left as a peerDependency and not a dependency because it depends on node version
+    // It's left as a peerDependency and not a dependency because it depends on node version
     peerDependencies: {
       '@types/node': '>=8.0.0',
     },
