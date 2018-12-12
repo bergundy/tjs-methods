@@ -14,13 +14,13 @@ function mktemp() {
 }
 const argv = yargs
     .command('$0 <package> <pattern>', 'launch code generator', (y) => y
+    .positional('package', {
+    type: 'string',
+    describe: 'Publish as npm package with format of <packageName>@<version> (e.g. myservice@1.2.3)',
+})
     .positional('pattern', {
     type: 'string',
     describe: 'Files matching this pattern will be evaluated as input',
-})
-    .option('package', {
-    type: 'string',
-    describe: 'Publish as npm package with format of <packageName>@<version> (e.g. myservice@1.2.3)',
 }))
     .option('output', {
     type: 'string',
@@ -34,8 +34,14 @@ const argv = yargs
     choices: Object.values(types_1.Role),
     describe: 'Generate specific role',
 })
+    .option('nocompile', {
+    type: 'boolean',
+    default: false,
+    describe: 'Skip compilation (mostly for tests)',
+})
     .option('publish', {
     type: 'boolean',
+    default: false,
     alias: 'p',
     describe: 'Publish as package to npm',
 })
@@ -45,7 +51,7 @@ const argv = yargs
     describe: 'When `publish` is specified, publish to a specific tag (see `npm publish --tag`)',
 })
     .argv;
-async function main({ pattern, 'package': pkgName, output, role, publish, 'publish-tag': tag }) {
+async function main({ pattern, 'package': pkgName, 'nocompile': noCompile, output, role, publish, 'publish-tag': tag, }) {
     const parts = pkgName.split('@');
     if (parts.length < 2) {
         throw new Error(`package param should have a @ character for version, got ${pkgName}`);
@@ -65,7 +71,9 @@ async function main({ pattern, 'package': pkgName, output, role, publish, 'publi
         const generator = await output_1.TSOutput.create(genPath);
         const generated = await index_1.generate(pattern, role);
         await generator.write(name, version, generated, role);
-        await generator.compile();
+        if (!noCompile) {
+            await generator.compile();
+        }
         process.stdout.write(`Generated code in: ${genPath}\n`);
         if (publish) {
             await generator.publish(tag);

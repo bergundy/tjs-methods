@@ -2,8 +2,8 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const path = require("path");
 const fs_1 = require("mz/fs");
-const child_process_1 = require("child_process");
 const types_1 = require("./types");
+const utils_1 = require("./utils");
 const tsconfig = {
     version: '2.4.2',
     compilerOptions: {
@@ -25,21 +25,11 @@ const tsconfig = {
         'node_modules',
     ],
 };
-const spawn = (command, args, options) => new Promise((resolve, reject) => {
-    child_process_1.spawn(command, args, options).on('close', (code) => {
-        if (code === 0) {
-            resolve(code);
-        }
-        else {
-            reject(new Error(`command: '${command} ${args}' failed process failed with exit code: ${code}`));
-        }
-    });
-});
 class TSOutput {
     constructor(genPath) {
         this.genPath = genPath;
-        this.npm = (...args) => spawn('npm', args, { cwd: genPath, stdio: 'inherit' });
-        this.tsc = (...args) => spawn('tsc', args, { cwd: this.genPath, stdio: 'inherit' });
+        this.npm = (...args) => utils_1.spawn('npm', args, { cwd: genPath, stdio: 'inherit' });
+        this.tsc = (...args) => utils_1.spawn('tsc', args, { cwd: this.genPath, stdio: 'inherit' });
     }
     static async create(genPath) {
         const st = await fs_1.stat(genPath);

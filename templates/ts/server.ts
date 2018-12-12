@@ -73,8 +73,6 @@ export class {{name}}Router {
       const { context: clientContextFromBody, args } = (ctx.request as any).body;
       const params = this.props.{{name}}.properties.params;
       const coerced = coerceWithSchema(params, args, schema);
-      const order = (params as any).propertyOrder || [];
-      const sortedArgs = Object.entries(coerced).sort(([a], [b]) => order.indexOf(a) - order.indexOf(b)).map(([_, v]) => v);
       const method = this.handler.{{name}}.bind(this.handler);
       try {
         ctx.set('Content-Type', 'application/json');
@@ -93,10 +91,10 @@ export class {{name}}Router {
         const context = { ...clientContext, ...serverOnlyContext };
         ctx.state.context = context;
         {{#serverContext}}
-        ctx.body = JSON.stringify(await method(context, ...sortedArgs));
+        ctx.body = JSON.stringify(await method(context{{#parameters}}, coerced.{{{name}}}{{/parameters}}));
         {{/serverContext}}
         {{^serverContext}}
-        ctx.body = JSON.stringify(await method(...sortedArgs));
+        ctx.body = JSON.stringify(await method({{#parameters}}coerced.{{{name}}}{{^last}}, {{/last}}{{/parameters}}));
         {{/serverContext}}
       } catch (err) {
         {{#throws}}
