@@ -432,6 +432,9 @@ export default async function test(client: TestClient) {
 export interface Test {
   bar: {
     params: {
+      /**
+       * @minLength 1
+       */
       a: string;
     };
     returns: string;
@@ -519,6 +522,26 @@ export default async function test() {
   await expect(client.bar('heh')).to.eventually.be.rejectedWith(StatusCodeError, '500 - "Internal Server Error"');
 }
 `;
+    await new TestCase(dummySchema, '', test, undefined, dummyMain).run();
+  });
+
+  it('throws 400 errors on validation issues', async () => {
+    const handler = `
+export default class Handler {
+  public async bar(name: string): Promise<string> {
+    return 'Hello, ' + name;
+  }
+}
+`;
+    const test = `
+import { StatusCodeError } from 'request-promise-native/errors';
+import { TestClient } from './client';
+
+export default async function test(client: TestClient) {
+  await expect(client.bar('')).to.eventually.be.rejectedWith(StatusCodeError, '400 - "Bad Request"');
+}
+`;
+    await new TestCase(dummySchema, handler, test).run();
     await new TestCase(dummySchema, '', test, undefined, dummyMain).run();
   });
 });
