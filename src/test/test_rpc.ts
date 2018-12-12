@@ -547,11 +547,10 @@ public async bar(name: string): Promise<string> {
 }
 `;
   const tester = `
-import { StatusCodeError } from 'request-promise-native/errors';
-import { TestClient } from './client';
+import { TestClient, ValidationError } from './client';
 
 export default async function test(client: TestClient) {
-await expect(client.bar('')).to.eventually.be.rejectedWith(StatusCodeError, '400 - "Bad Request"');
+await expect(client.bar('')).to.eventually.be.rejectedWith(ValidationError, 'Bad Request');
 }
 `;
   await new TestCase(dummySchema, handler, tester).run();

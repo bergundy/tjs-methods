@@ -1,6 +1,12 @@
 import { zip, get, mapValues, fromPairs } from 'lodash';
 import * as Ajv from 'ajv';
 
+export class ValidationError extends Error {
+  constructor(message: string, public errors: any) {
+    super(message);
+  }
+}
+
 export function coerceWithSchema(schema: any, value: any, defsSchema = {}): any {
   if (schema.$ref) {
     const getter = schema.$ref.replace(/^#\//, '').replace(/\//g, '.');
@@ -26,7 +32,7 @@ export interface ClassValidator {
 }
 
 export function createClassValidator(schema: { definitions: any }, className: string, field: string): ClassValidator {
-  const ajv = new Ajv({ useDefaults: true });
+  const ajv = new Ajv({ useDefaults: true, allErrors: true });
   ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
   for (const [k, v] of Object.entries(schema.definitions)) {
     ajv.addSchema(v, `#/definitions/${k}`);

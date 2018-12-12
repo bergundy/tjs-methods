@@ -11,6 +11,8 @@ export function validate(schema: { definitions: any }, className: string) {
     const { method } = ctx.params;
     if (!isPlainObject(ctx.request.body)) {
       ctx.throw(400, 'Bad Request', {
+        knownError: true,
+        name: 'ValidationError',
         errors: [{ message: 'Could not parse body', method }],
       });
     }
@@ -18,16 +20,22 @@ export function validate(schema: { definitions: any }, className: string) {
     const validator = validators[method];
     if (!validator) {
       ctx.throw(400, 'Bad Request', {
+        knownError: true,
+        name: 'ValidationError',
         errors: [{ message: 'Method not supported', method }],
       });
     }
     if (contextValidator && !contextValidator(context)) {
       ctx.throw(400, 'Bad Request', {
+        knownError: true,
+        name: 'ValidationError',
         errors: contextValidator.errors,
       });
     }
     if (!validator(args)) {
       ctx.throw(400, 'Bad Request', {
+        knownError: true,
+        name: 'ValidationError',
         errors: validator.errors,
       });
     }

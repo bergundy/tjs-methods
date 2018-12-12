@@ -2,6 +2,13 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const lodash_1 = require("lodash");
 const Ajv = require("ajv");
+class ValidationError extends Error {
+    constructor(message, errors) {
+        super(message);
+        this.errors = errors;
+    }
+}
+exports.ValidationError = ValidationError;
 function coerceWithSchema(schema, value, defsSchema = {}) {
     if (schema.$ref) {
         const getter = schema.$ref.replace(/^#\//, '').replace(/\//g, '.');
@@ -23,7 +30,7 @@ function coerceWithSchema(schema, value, defsSchema = {}) {
 }
 exports.coerceWithSchema = coerceWithSchema;
 function createClassValidator(schema, className, field) {
-    const ajv = new Ajv({ useDefaults: true });
+    const ajv = new Ajv({ useDefaults: true, allErrors: true });
     ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
     for (const [k, v] of Object.entries(schema.definitions)) {
         ajv.addSchema(v, `#/definitions/${k}`);

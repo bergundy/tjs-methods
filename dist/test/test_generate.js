@@ -7,7 +7,7 @@ const chai_1 = require("chai");
 const util_1 = require("util");
 const path = require("path");
 const crypto_1 = require("crypto");
-const rmrf = require("rimraf");
+const rmrf = require("rmfr");
 const fs_1 = require("mz/fs");
 const types_1 = require("../types");
 const utils_1 = require("../utils");
@@ -21,7 +21,7 @@ class TestCase {
         this.dir = dir;
     }
     async cleanup() {
-        await util_1.promisify(rmrf)(this.dir);
+        await rmrf(this.dir);
     }
     async generate(role) {
         await fs_1.mkdir(this.dir);

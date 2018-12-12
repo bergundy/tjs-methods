@@ -2,10 +2,9 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const ava_1 = require("ava");
 require("chai-as-promised");
-const util_1 = require("util");
 const path = require("path");
 const crypto_1 = require("crypto");
-const rmrf = require("rimraf");
+const rmrf = require("rmfr");
 const fs_1 = require("mz/fs");
 const child_process_1 = require("mz/child_process");
 const utils_1 = require("../utils");
@@ -73,7 +72,7 @@ ${this.tester}`);
         });
     }
     async cleanup() {
-        await util_1.promisify(rmrf)(this.dir);
+        await rmrf(this.dir);
     }
     async exec() {
         const testPath = path.join(this.dir, 'main.js');
@@ -524,11 +523,10 @@ public async bar(name: string): Promise<string> {
 }
 `;
     const tester = `
-import { StatusCodeError } from 'request-promise-native/errors';
-import { TestClient } from './client';
+import { TestClient, ValidationError } from './client';
 
 export default async function test(client: TestClient) {
-await expect(client.bar('')).to.eventually.be.rejectedWith(StatusCodeError, '400 - "Bad Request"');
+await expect(client.bar('')).to.eventually.be.rejectedWith(ValidationError, 'Bad Request');
 }
 `;
     await new TestCase(dummySchema, handler, tester).run();

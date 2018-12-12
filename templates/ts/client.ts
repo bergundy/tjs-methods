@@ -1,7 +1,7 @@
 // tslint:disable
 import * as request from 'request-promise-native';
 import { CoreOptions, RequestAPI, RequiredUriUrl } from 'request';
-import { coerceWithSchema } from './common';
+import { coerceWithSchema, ValidationError } from './common';
 import {
   schema,
   InternalServerError,
@@ -18,6 +18,10 @@ import {
   {{name}},
   {{/bypassTypes}}
 } from './interfaces';
+
+export {
+  ValidationError,
+};
 
 export type Options = Pick<CoreOptions,
   'jar' |
@@ -89,7 +93,12 @@ export class {{name}}Client {
       });
       return coerceWithSchema(this.props.{{{name}}}.properties.returns, ret, schema) as {{{returnType}}};
     } catch (err) {
-      if (err.statusCode === 500 && typeof err.response.body === 'object') {
+      if (err.statusCode === 400 && typeof err.response.body === 'object') {
+        const body = err.response.body;
+        if (body.name === 'ValidationError') {
+          throw new ValidationError(body.message, body.errors);
+        }
+      } else if (err.statusCode === 500 && typeof err.response.body === 'object') {
         const body = err.response.body;
         {{#throws}}
         if (body.name === '{{.}}') {

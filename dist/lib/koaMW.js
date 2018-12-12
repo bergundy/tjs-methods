@@ -10,6 +10,8 @@ function validate(schema, className) {
         const { method } = ctx.params;
         if (!lodash_1.isPlainObject(ctx.request.body)) {
             ctx.throw(400, 'Bad Request', {
+                knownError: true,
+                name: 'ValidationError',
                 errors: [{ message: 'Could not parse body', method }],
             });
         }
@@ -17,16 +19,22 @@ function validate(schema, className) {
         const validator = validators[method];
         if (!validator) {
             ctx.throw(400, 'Bad Request', {
+                knownError: true,
+                name: 'ValidationError',
                 errors: [{ message: 'Method not supported', method }],
             });
         }
         if (contextValidator && !contextValidator(context)) {
             ctx.throw(400, 'Bad Request', {
+                knownError: true,
+                name: 'ValidationError',
                 errors: contextValidator.errors,
             });
         }
         if (!validator(args)) {
             ctx.throw(400, 'Bad Request', {
+                knownError: true,
+                name: 'ValidationError',
                 errors: validator.errors,
             });
         }

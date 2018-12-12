@@ -102,9 +102,9 @@ export class {{name}}Router {
           ctx.throw(500, 'Internal Server Error', {
             ...err,
             knownError: true,
+            expose: true,
             name: '{{.}}',
             message: err.message,
-            stack: stackTraceInError ? err.stack : '',
           });
         }
         {{/throws}}
