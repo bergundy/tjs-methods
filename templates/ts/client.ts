@@ -1,7 +1,7 @@
 // tslint:disable
 import * as request from 'request-promise-native';
 import { CoreOptions, RequestAPI, RequiredUriUrl } from 'request';
-import { coerceWithSchema, ValidationError } from './common';
+import { createReturnTypeValidator, ClassValidator, ValidationError } from './common';
 import {
   schema,
   InternalServerError,
@@ -66,13 +66,16 @@ export class {{name}}Client {
     '{{name}}',
     {{/methods}}
   ];
+  public static readonly validators: ClassValidator = createReturnTypeValidator(schema, '{{{name}}}');
 
   protected readonly props = schema.definitions.{{{name}}}.properties;
 
   protected readonly request: RequestAPI<request.RequestPromise, request.RequestPromiseOptions, RequiredUriUrl>;
+  public readonly validators: ClassValidator; // We don't have class name in method scope because mustache sux
 
   public constructor(protected readonly serverUrl: string, protected readonly options: Options = {}) {
     this.request = request.defaults({ ...options, json: true, baseUrl: serverUrl }) as any;
+    this.validators = {{{name}}}Client.validators;
   }
   {{#methods}}
 
@@ -91,7 +94,13 @@ export class {{name}}Client {
           {{/clientContext}}
         }
       });
-      return coerceWithSchema(this.props.{{{name}}}.properties.returns, ret, schema) as {{{returnType}}};
+
+      const validator = this.validators.{{{name}}};
+      const wrapped = { returns: ret }; // wrapped for coersion
+      if (!validator(wrapped)) {
+        throw new ValidationError('Failed to validate response', validator.errors);
+      }
+      return wrapped.returns as {{{returnType}}};
     } catch (err) {
       if (err.statusCode === 400 && typeof err.response.body === 'object') {
         const body = err.response.body;

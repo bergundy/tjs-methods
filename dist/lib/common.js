@@ -9,29 +9,30 @@ class ValidationError extends Error {
     }
 }
 exports.ValidationError = ValidationError;
-function coerceWithSchema(schema, value, defsSchema = {}) {
-    if (schema.$ref) {
-        const getter = schema.$ref.replace(/^#\//, '').replace(/\//g, '.');
-        schema = lodash_1.get(defsSchema, getter);
-    }
-    if (schema.type === 'array') {
-        if (Array.isArray(schema.items)) {
-            return lodash_1.zip(schema.items, value).map(([s, v]) => coerceWithSchema(s, v, defsSchema));
-        }
-        return value.map((v) => coerceWithSchema(schema.items, v, defsSchema));
-    }
-    if (schema.properties) {
-        return lodash_1.mapValues(value, (v, k) => coerceWithSchema(schema.properties[k], v, defsSchema));
-    }
-    if (schema.type === 'string' && schema.format === 'date-time') {
-        return new Date(value);
-    }
-    return value;
-}
-exports.coerceWithSchema = coerceWithSchema;
-function createClassValidator(schema, className, field) {
+function createValidator() {
     const ajv = new Ajv({ useDefaults: true, allErrors: true });
     ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
+    ajv.addKeyword('coerce-date', {
+        type: 'string',
+        modifying: true,
+        valid: true,
+        compile: (onOrOff, parentSchema) => {
+            if (parentSchema.format !== 'date-time') {
+                throw new Error('Format should be date-time when using coerce-date');
+            }
+            return (v, _dataPath, obj, key) => {
+                if (obj === undefined || key === undefined) {
+                    throw new Error('Cannot coerce a date at root level');
+                }
+                obj[key] = new Date(v);
+                return true;
+            };
+        },
+    });
+    return ajv;
+}
+function createClassValidator(schema, className, field) {
+    const ajv = createValidator();
     for (const [k, v] of Object.entries(schema.definitions)) {
         ajv.addSchema(v, `#/definitions/${k}`);
     }
@@ -40,9 +41,18 @@ function createClassValidator(schema, className, field) {
     ]));
 }
 exports.createClassValidator = createClassValidator;
+function createReturnTypeValidator(schema, className) {
+    const ajv = createValidator();
+    for (const [k, v] of Object.entries(schema.definitions)) {
+        ajv.addSchema(v, `#/definitions/${k}`);
+    }
+    return lodash_1.fromPairs(Object.entries(schema.definitions[className].properties).map(([method, s]) => [
+        method, ajv.compile({ properties: lodash_1.pick(s.properties, 'returns') }),
+    ]));
+}
+exports.createReturnTypeValidator = createReturnTypeValidator;
 function createInterfaceValidator(schema, ifaceName) {
-    const ajv = new Ajv({ useDefaults: true });
-    ajv.addMetaSchema(require('ajv/lib/refs/json-schema-draft-06.json'));
+    const ajv = createValidator();
     for (const [k, v] of Object.entries(schema.definitions)) {
         ajv.addSchema(v, `#/definitions/${k}`);
     }

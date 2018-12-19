@@ -166,7 +166,7 @@ ava_1.default('transform transforms a simple class with single attribute', utils
     };
     const result = transform_1.transform(schema);
     chai_1.expect(result).to.eql({
-        schema: JSON.stringify(schema),
+        schema: JSON.stringify(schema, undefined, 2),
         exceptions: [],
         classes: [
             {
@@ -219,7 +219,7 @@ ava_1.default('transform transforms a simple class with single method', utils_1.
     };
     const result = transform_1.transform(schema);
     chai_1.expect(result).to.eql({
-        schema: JSON.stringify(schema),
+        schema: JSON.stringify(schema, undefined, 2),
         exceptions: [],
         classes: [
             {
@@ -336,7 +336,7 @@ ava_1.default('transform transforms exceptions', utils_1.pass, () => {
     };
     const result = transform_1.transform(schema);
     chai_1.expect(result).to.eql({
-        schema: JSON.stringify(schema),
+        schema: JSON.stringify(schema, undefined, 2),
         exceptions: [
             {
                 name: 'RuntimeError',

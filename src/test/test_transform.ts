@@ -178,7 +178,7 @@ test('transform transforms a simple class with single attribute', pass, () => {
   };
   const result = transform(schema);
   expect(result).to.eql({
-    schema: JSON.stringify(schema),
+    schema: JSON.stringify(schema, undefined, 2),
     exceptions: [],
     classes: [
       {
@@ -232,7 +232,7 @@ test('transform transforms a simple class with single method', pass, () => {
   };
   const result = transform(schema);
   expect(result).to.eql({
-    schema: JSON.stringify(schema),
+    schema: JSON.stringify(schema, undefined, 2),
     exceptions: [],
     classes: [
       {
@@ -351,7 +351,7 @@ test('transform transforms exceptions', pass, () => {
   };
   const result = transform(schema);
   expect(result).to.eql({
-    schema: JSON.stringify(schema),
+    schema: JSON.stringify(schema, undefined, 2),
     exceptions: [
       {
         name: 'RuntimeError',

@@ -2,6 +2,21 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const lodash_1 = require("lodash");
 const toposort = require("toposort");
+function addCoersion(def) {
+    if (lodash_1.isPlainObject(def) && def.format === 'date-time') {
+        def['coerce-date'] = true;
+    }
+    else {
+        const values = lodash_1.isPlainObject(def) ? Object.values(def) : Array.isArray(def) ? def : undefined;
+        if (values === undefined) {
+            return;
+        }
+        for (const value of values) {
+            addCoersion(value);
+        }
+    }
+}
+exports.addCoersion = addCoersion;
 function typeToString(def) {
     const { type, format, $ref, anyOf, allOf, properties, required, items, enum: defEnum, launchType } = def;
     if (typeof launchType === 'string') {
@@ -118,6 +133,7 @@ const validEnumKeyRegex = /^[a-z][a-z\d_-]*$/i;
 const isValidEnumKeyRegex = (s) => validEnumKeyRegex.test(s);
 function transform(schema) {
     const { definitions } = schema;
+    addCoersion(definitions);
     const sortedDefinitions = sortDefinitions(definitions);
     const bypassTypeDefs = sortedDefinitions.filter(([_, { anyOf, allOf }]) => anyOf || allOf);
     const possibleEnumTypeDefs = sortedDefinitions.filter(([_, { enum: enumDef }]) => enumDef);
@@ -145,7 +161,7 @@ function transform(schema) {
         ? (serverOnlyContext ? 'ClientContext & ServerOnlyContext' : 'ClientContext')
         : (serverOnlyContext ? 'ServerOnlyContext' : undefined);
     return {
-        schema: JSON.stringify(schema),
+        schema: JSON.stringify(schema, undefined, 2),
         classes,
         exceptions,
         enums,

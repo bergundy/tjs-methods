@@ -16,6 +16,20 @@ interface TypeDef {
   launchType?: string;
 }
 
+export function addCoersion(def: any): void {
+  if (isPlainObject(def) && (def as any).format === 'date-time') {
+    def['coerce-date'] = true;
+  } else {
+    const values = isPlainObject(def) ? Object.values(def) : Array.isArray(def) ? def : undefined;
+    if (values === undefined) {
+      return;
+    }
+    for (const value of values) {
+      addCoersion(value);
+    }
+  }
+}
+
 export function typeToString(def: TypeDef): string {
   const { type, format, $ref, anyOf, allOf, properties, required, items, enum: defEnum, launchType } = def;
   if (typeof launchType === 'string') {
@@ -172,6 +186,7 @@ const isValidEnumKeyRegex = (s) => validEnumKeyRegex.test(s);
 
 export function transform(schema): ServiceSpec {
   const { definitions } = schema;
+  addCoersion(definitions);
   const sortedDefinitions = sortDefinitions(definitions);
   const bypassTypeDefs = sortedDefinitions.filter(
     ([_, { anyOf, allOf }]: Pair) => anyOf || allOf);
@@ -206,7 +221,7 @@ export function transform(schema): ServiceSpec {
     ? (serverOnlyContext ? 'ClientContext & ServerOnlyContext' : 'ClientContext')
     : (serverOnlyContext ? 'ServerOnlyContext' : undefined);
   return {
-    schema: JSON.stringify(schema),
+    schema: JSON.stringify(schema, undefined, 2),
     classes,
     exceptions,
     enums,

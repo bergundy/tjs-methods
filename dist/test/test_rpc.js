@@ -212,17 +212,17 @@ dateIncrement: {
 }`;
     const handler = `
 export default class Handler {
-public async dateIncrement(d: Date): Promise<Date> {
-  return new Date(d.getTime() + 1);
-}
+  public async dateIncrement(d: Date): Promise<Date> {
+    return new Date(d.getTime() + 1);
+  }
 }
 `;
     const tester = `
 import { TestClient } from './client';
 
 export default async function test(client: TestClient) {
-const d = new Date();
-expect(await client.dateIncrement(d)).to.eql(new Date(d.getTime() + 1));
+  const d = new Date();
+  expect(await client.dateIncrement(d)).to.eql(new Date(d.getTime() + 1));
 }
 `;
     await new TestCase(schema, handler, tester).run();

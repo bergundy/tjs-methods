@@ -5,7 +5,6 @@ import * as http from 'http';
 import * as bodyParser from 'koa-bodyparser';
 import * as errors from 'koa-json-error';
 import { validate } from './koaMW';
-import { coerceWithSchema } from './common';
 import {
   schema,
   InternalServerError,
@@ -72,7 +71,6 @@ export class {{name}}Router {
     this.koaRouter.post('/{{name}}', async (ctx) => {
       const { context: clientContextFromBody, args } = (ctx.request as any).body;
       const params = this.props.{{name}}.properties.params;
-      const coerced = coerceWithSchema(params, args, schema);
       const method = this.handler.{{name}}.bind(this.handler);
       try {
         ctx.set('Content-Type', 'application/json');
@@ -91,10 +89,10 @@ export class {{name}}Router {
         const context = { ...clientContext, ...serverOnlyContext };
         ctx.state.context = context;
         {{#serverContext}}
-        ctx.body = JSON.stringify(await method(context{{#parameters}}, coerced.{{{name}}}{{/parameters}}));
+        ctx.body = JSON.stringify(await method(context{{#parameters}}, args.{{{name}}}{{/parameters}}));
         {{/serverContext}}
         {{^serverContext}}
-        ctx.body = JSON.stringify(await method({{#parameters}}coerced.{{{name}}}{{^last}}, {{/last}}{{/parameters}}));
+        ctx.body = JSON.stringify(await method({{#parameters}}args.{{{name}}}{{^last}}, {{/last}}{{/parameters}}));
         {{/serverContext}}
       } catch (err) {
         {{#throws}}
