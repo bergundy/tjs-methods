@@ -10,6 +10,7 @@ const tsconfig = {
     target: 'es2017',
     module: 'commonjs',
     moduleResolution: 'node',
+    typeRoots: ['./node_modules/@types'],
     emitDecoratorMetadata: true,
     experimentalDecorators: true,
     sourceMap: true,
