@@ -1,4 +1,4 @@
-import { identity, pick, zip, get, mapValues, fromPairs } from 'lodash';
+import { identity, pick, fromPairs } from 'lodash';
 import * as Ajv from 'ajv';
 
 export class ValidationError extends Error {
