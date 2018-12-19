@@ -1,7 +1,10 @@
+import { createReadStream, ReadStream } from 'fs';
 import { isPlainObject } from 'lodash';
+import { Context } from 'koa';
 import * as koaRouter from 'koa-router';
 import * as koaBody from 'koa-bodyparser'; // tslint:disable-line:no-unused-variable
-import { createClassValidator, createInterfaceValidator } from './common';
+import { IncomingForm } from 'formidable';
+import { createClassValidator, createInterfaceValidator, STREAMS, parseForm } from './common';
 
 export function validate(schema: { definitions: any }, className: string) {
   const contextValidator = schema.definitions.ClientContext
@@ -41,4 +44,23 @@ export function validate(schema: { definitions: any }, className: string) {
     }
     await next();
   };
+}
+
+export async function formMW(ctx: Context, next: () => Promise<void>) {
+  if (ctx.get('content-type').startsWith('multipart/form-data')) {
+    try {
+      const { body, streams } = await parseForm(ctx.req as any);
+      ctx.request.body = body;
+      // TODO: this isn't pretty
+      (ctx.request as any).body.args[STREAMS] = streams;
+    } catch (err) {
+      ctx.throw(400, 'Bad Request', {
+        knownError: true,
+        name: 'ValidationError',
+        errors: [{ message: 'Failed to parse multipart body' }],
+      });
+      return; // Typescript doesn't know that ctx.throw throws an error..
+    }
+  }
+  await next();
 }

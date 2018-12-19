@@ -42,4 +42,24 @@ function validate(schema, className) {
     };
 }
 exports.validate = validate;
+async function formMW(ctx, next) {
+    if (ctx.get('content-type').startsWith('multipart/form-data')) {
+        try {
+            const { body, streams } = await common_1.parseForm(ctx.req);
+            ctx.request.body = body;
+            // TODO: this isn't pretty
+            ctx.request.body.args[common_1.STREAMS] = streams;
+        }
+        catch (err) {
+            ctx.throw(400, 'Bad Request', {
+                knownError: true,
+                name: 'ValidationError',
+                errors: [{ message: 'Failed to parse multipart body' }],
+            });
+            return; // Typescript doesn't know that ctx.throw throws an error..
+        }
+    }
+    await next();
+}
+exports.formMW = formMW;
 //# sourceMappingURL=koaMW.js.map

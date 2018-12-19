@@ -36,4 +36,12 @@ export interface Example {
     };
     returns: Date;
   };
+
+  upload: {
+    params: {
+      name: string;
+      data: Buffer;
+    };
+    returns: Buffer;
+  };
 }

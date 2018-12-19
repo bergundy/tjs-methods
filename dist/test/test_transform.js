@@ -27,6 +27,19 @@ const exceptionSchema = {
     ],
     type: 'object',
 };
+const bufferSchema = {
+    description: 'Raw data is stored in instances of the Buffer class.\nA Buffer is similar to an array of ...',
+    type: 'object',
+    additionalProperties: false,
+    patternProperties: {
+        '^[0-9]+$': {
+            type: 'number',
+        },
+    },
+};
+ava_1.default('isBufferDefinition detects a Buffer', (t) => {
+    t.true(transform_1.isBufferDefinition(bufferSchema));
+});
 ava_1.default('findRefs finds all reffed types', utils_1.pass, () => {
     const result = transform_1.findRefs({
         properties: {
@@ -54,6 +67,7 @@ ava_1.default('findRefs finds all reffed types', utils_1.pass, () => {
                     },
                 ],
                 returnType: 'string',
+                isVoid: false,
             },
         },
     });
@@ -243,6 +257,7 @@ ava_1.default('transform transforms a simple class with single method', utils_1.
                             },
                         ],
                         returnType: 'number',
+                        isVoid: false,
                         throws: [],
                     },
                 ],
@@ -369,6 +384,7 @@ ava_1.default('transform transforms exceptions', utils_1.pass, () => {
                         name: 'add',
                         parameters: [],
                         returnType: 'number',
+                        isVoid: false,
                         throws: ['RuntimeError'],
                     },
                 ],
@@ -404,6 +420,51 @@ ava_1.default('transform returns a context class when given a Context interface'
             },
         ],
         methods: [],
+    });
+});
+ava_1.default('transform transforms a Buffer', utils_1.pass, () => {
+    const result = transform_1.transform({
+        definitions: {
+            Test: {
+                properties: {
+                    foo: {
+                        type: 'object',
+                        properties: {
+                            params: {
+                                type: 'object',
+                                properties: {
+                                    foo: bufferSchema,
+                                },
+                                required: ['foo'],
+                            },
+                            returns: {
+                                type: 'integer',
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    });
+    chai_1.expect(result.classes[0]).to.eql({
+        name: 'Test',
+        attributes: [],
+        methods: [
+            {
+                name: 'foo',
+                parameters: [
+                    {
+                        name: 'foo',
+                        type: 'ReadableStream',
+                        optional: false,
+                        last: true,
+                    },
+                ],
+                returnType: 'number',
+                isVoid: false,
+                throws: [],
+            },
+        ],
     });
 });
 ava_1.default('transform throws when passed non string enum', utils_1.pass, () => {

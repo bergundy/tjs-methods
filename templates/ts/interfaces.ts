@@ -1,4 +1,6 @@
 // tslint:disable
+import { Readable as ReadableStream } from 'stream';
+
 export const schema = {{{schema}}};
 
 export class InternalServerError extends Error {

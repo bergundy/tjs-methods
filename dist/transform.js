@@ -2,9 +2,23 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 const lodash_1 = require("lodash");
 const toposort = require("toposort");
+function isBufferDefinition(def) {
+    return lodash_1.isPlainObject(def)
+        && typeof def.description === 'string'
+        && def.description.startsWith('Raw data is stored in instances of the Buffer class.')
+        && def.type === 'object'
+        && lodash_1.get(def, ['patternProperties', '^[0-9]+$', 'type']) === 'number';
+}
+exports.isBufferDefinition = isBufferDefinition;
 function addCoersion(def) {
     if (lodash_1.isPlainObject(def) && def.format === 'date-time') {
         def['coerce-date'] = true;
+    }
+    else if (isBufferDefinition(def)) {
+        def['coerce-stream'] = true;
+        delete def.description;
+        delete def.patternProperties;
+        def.additionalProperties = true;
     }
     else {
         const values = lodash_1.isPlainObject(def) ? Object.values(def) : Array.isArray(def) ? def : undefined;
@@ -27,6 +41,9 @@ function typeToString(def) {
             return defEnum.map((d) => JSON.stringify(d)).join(' | ');
         }
         if (type === 'object') {
+            if (def['coerce-stream'] === true) {
+                return 'ReadableStream';
+            }
             if (lodash_1.isPlainObject(properties)) {
                 const req = required || [];
                 const propString = Object.entries(properties).map(([n, p]) => `${n}${req.includes(n) ? '' : '?'}: ${typeToString(p)};`).join(' ');
@@ -105,6 +122,7 @@ function transformClassPair([className, { properties, required }]) {
             const params = Object.entries(method.properties.params.properties);
             const order = method.properties.params.propertyOrder;
             const methRequired = method.properties.params.required || [];
+            const returnType = typeToString(method.properties.returns).replace(/^null$/, 'void');
             return {
                 name: methodName,
                 parameters: params
@@ -115,8 +133,9 @@ function transformClassPair([className, { properties, required }]) {
                     optional: !methRequired.includes(paramName),
                     last: i === params.length - 1,
                 })),
-                returnType: typeToString(method.properties.returns).replace(/^null$/, 'void'),
+                returnType,
                 throws: method.properties.throws ? typeToString(method.properties.throws).split(' | ') : [],
+                isVoid: returnType === 'void',
             };
         }),
         attributes: Object.entries(properties)

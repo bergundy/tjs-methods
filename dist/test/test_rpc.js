@@ -167,7 +167,7 @@ export default class Handler {
 import { TestClient } from './client';
 
 export default async function test(client: TestClient) {
- expect(await client.bar('heh')).to.be.undefined;
+ expect(await client.bar('heh')).to.be.null;
 }
 `;
     await new TestCase(schema, handler, tester).run();
@@ -232,12 +232,12 @@ export default async function test(client: TestClient) {
 ava_1.default('rpc coerces Date in param and return', utils_2.pass, async () => {
     const schema = `
 export interface Test {
-dateIncrement: {
-  params: {
-    d: Date;
+  dateIncrement: {
+    params: {
+      d: Date;
+    };
+    returns: Date;
   };
-  returns: Date;
-};
 }`;
     const handler = `
 export default class Handler {
@@ -252,6 +252,54 @@ import { TestClient } from './client';
 export default async function test(client: TestClient) {
   const d = new Date();
   expect(await client.dateIncrement(d)).to.eql(new Date(d.getTime() + 1));
+}
+`;
+    await new TestCase(schema, handler, tester).run();
+});
+ava_1.default('rpc coerces Buffer in param and return', utils_2.pass, async () => {
+    const schema = `
+export interface Test {
+  echo: {
+    params: {
+      a: Buffer;
+    };
+    returns: Buffer;
+  };
+  // echoDeep: {
+  //   params: {
+  //     a: {
+  //       b: Buffer;
+  //     };
+  //   };
+  //   returns: {
+  //     b: Buffer;
+  //   };
+  // };
+}`;
+    const handler = `
+import * as stream from 'stream';
+
+export default class Handler {
+  public async echo(a: stream.Readable): Promise<stream.Readable> {
+    return a;
+  }
+  // public async echoDeep({ b }: { b: stream.Readable }): Promise<{ b: stream.Readable }> {
+  //   return { b };
+  // }
+}
+`;
+    const tester = `
+import * as stream from 'stream';
+import { TestClient } from './client';
+import { streamToBuffer } from './common';
+
+export default async function test(client: TestClient) {
+  const reqStream = new stream.Readable();
+  reqStream.push(Buffer.from('hey'));
+  reqStream.push(null);
+  const resStream = await client.echo(reqStream);
+  const buffer = await streamToBuffer(resStream);
+  expect(buffer.toString()).to.equal('hey');
 }
 `;
     await new TestCase(schema, handler, tester).run();
@@ -490,7 +538,7 @@ await new Promise((resolve, reject) => {
 const { address, port } = (server.address() as AddressInfo);
 const client = new TestClient('http://' + address + ':' + port);
 server.close();
-await expect(client.bar('heh')).to.eventually.be.rejectedWith(/^Error: connect ECONNREFUSED/);
+await expect(client.bar('heh')).to.eventually.be.rejectedWith(/^connect ECONNREFUSED/);
 }
 `;
     await new TestCase(dummySchema, '', tester, undefined, dummyMain).run();
@@ -514,7 +562,7 @@ await new Promise((resolve, reject) => {
 });
 const { address, port } = (server.address() as AddressInfo);
 const client = new TestClient('http://' + address + ':' + port);
-await expect(client.bar('heh')).to.eventually.be.rejectedWith(StatusCodeError, '500 - undefined');
+await expect(client.bar('heh')).to.eventually.be.rejectedWith(Error, '500 undefined');
 }
 `;
     await new TestCase(dummySchema, '', tester, undefined, dummyMain).run();
@@ -522,7 +570,6 @@ await expect(client.bar('heh')).to.eventually.be.rejectedWith(StatusCodeError, '
 ava_1.default('rpc handles non-json 500 responses', utils_2.pass, async () => {
     const tester = `
 import { TestClient } from './client';
-import { StatusCodeError } from 'request-promise-native/errors';
 import { AddressInfo } from 'net';
 import * as http from 'http';
 
@@ -538,7 +585,7 @@ await new Promise((resolve, reject) => {
 });
 const { address, port } = (server.address() as AddressInfo);
 const client = new TestClient('http://' + address + ':' + port);
-await expect(client.bar('heh')).to.eventually.be.rejectedWith(StatusCodeError, '500 - "Internal Server Error"');
+await expect(client.bar('heh')).to.eventually.be.rejectedWith(Error, '500 Internal Server Error');
 }
 `;
     await new TestCase(dummySchema, '', tester, undefined, dummyMain).run();

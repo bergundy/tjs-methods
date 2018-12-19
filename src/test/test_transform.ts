@@ -1,7 +1,7 @@
 import test from 'ava';
 import { expect } from 'chai';
 import { pass } from './utils';
-import { transform, typeToString, findRefs } from '../transform';
+import { transform, typeToString, findRefs, isBufferDefinition } from '../transform';
 
 const exceptionSchema = {
   properties: {
@@ -26,6 +26,21 @@ const exceptionSchema = {
   ],
   type: 'object',
 };
+
+const bufferSchema = {
+  description: 'Raw data is stored in instances of the Buffer class.\nA Buffer is similar to an array of ...',
+  type: 'object',
+  additionalProperties: false,
+  patternProperties: {
+    '^[0-9]+$': {
+      type: 'number',
+    },
+  },
+};
+
+test('isBufferDefinition detects a Buffer', (t) => {
+  t.true(isBufferDefinition(bufferSchema));
+});
 
 test('findRefs finds all reffed types', pass, () => {
   const result = findRefs({
@@ -54,6 +69,7 @@ test('findRefs finds all reffed types', pass, () => {
           },
         ],
         returnType: 'string',
+        isVoid: false,
       },
     },
   });
@@ -256,6 +272,7 @@ test('transform transforms a simple class with single method', pass, () => {
               },
             ],
             returnType: 'number',
+            isVoid: false,
             throws: [],
           },
         ],
@@ -385,6 +402,7 @@ test('transform transforms exceptions', pass, () => {
             parameters: [
             ],
             returnType: 'number',
+            isVoid: false,
             throws: ['RuntimeError'],
           },
         ],
@@ -421,6 +439,52 @@ test('transform returns a context class when given a Context interface', pass, (
       },
     ],
     methods: [],
+  });
+});
+
+test('transform transforms a Buffer', pass, () => {
+  const result = transform({
+    definitions: {
+      Test: {
+        properties: {
+          foo: {
+            type: 'object',
+            properties: {
+              params: {
+                type: 'object',
+                properties: {
+                  foo: bufferSchema,
+                },
+                required: ['foo'],
+              },
+              returns: {
+                type: 'integer',
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+  expect(result.classes[0]).to.eql({
+    name: 'Test',
+    attributes: [],
+    methods: [
+      {
+        name: 'foo',
+        parameters: [
+          {
+            name: 'foo',
+            type: 'ReadableStream',
+            optional: false,
+            last: true,
+          },
+        ],
+        returnType: 'number',
+        isVoid: false,
+        throws: [],
+      },
+    ],
   });
 });
 

@@ -1,10 +1,13 @@
 // tslint:disable
+import { Readable as ReadableStream } from 'stream';
 import * as Koa from 'koa';
 import * as Router from 'koa-router';
 import * as http from 'http';
 import * as bodyParser from 'koa-bodyparser';
 import * as errors from 'koa-json-error';
-import { validate } from './koaMW';
+import * as FormData from 'form-data';
+import { serialize } from './common';
+import { validate, formMW } from './koaMW';
 import {
   schema,
   InternalServerError,
@@ -64,8 +67,7 @@ export class {{name}}Router {
         return { ...base, ...rest, name };
       },
     }));
-    this.koaRouter.use(bodyParser());
-    this.koaRouter.post('/:method', validate(schema, '{{name}}'));
+    this.koaRouter.post('/:method', bodyParser(), formMW, validate(schema, '{{name}}'));
 
     {{#methods}}
     this.koaRouter.post('/{{name}}', async (ctx) => {
@@ -89,11 +91,32 @@ export class {{name}}Router {
         const context = { ...clientContext, ...serverOnlyContext };
         ctx.state.context = context;
         {{#serverContext}}
-        ctx.body = JSON.stringify(await method(context{{#parameters}}, args.{{{name}}}{{/parameters}}));
+        const promise = method(context{{#parameters}}, args.{{{name}}}{{/parameters}});
         {{/serverContext}}
         {{^serverContext}}
-        ctx.body = JSON.stringify(await method({{#parameters}}args.{{{name}}}{{^last}}, {{/last}}{{/parameters}}));
+        const promise = method({{#parameters}}args.{{{name}}}{{^last}}, {{/last}}{{/parameters}});
         {{/serverContext}}
+        {{#isVoid}}
+        await promise;
+        const response = null;
+        {{/isVoid}}
+        {{^isVoid}}
+        const response = await promise;
+        {{/isVoid}}
+        const { streams, body } = serialize(response);
+        if (streams.length > 0) {
+          const form = new FormData();
+          form.append('body', body);
+          streams.forEach((v, k) => form.append(`${k}`, v));
+          const headers = {
+            ...form.getHeaders(),
+            'content-type': `multipart/mixed; boundary=${form.getBoundary()}`,
+          };
+          ctx.set(headers);
+          ctx.body = form;
+        } else {
+          ctx.body = body;
+        }
       } catch (err) {
         {{#throws}}
         if (err instanceof {{.}}) {
