@@ -20,6 +20,9 @@ function createValidator() {
             if (parentSchema.format !== 'date-time') {
                 throw new Error('Format should be date-time when using coerce-date');
             }
+            if (onOrOff !== true) {
+                return lodash_1.identity;
+            }
             return (v, _dataPath, obj, key) => {
                 if (obj === undefined || key === undefined) {
                     throw new Error('Cannot coerce a date at root level');

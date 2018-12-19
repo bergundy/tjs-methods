@@ -1,4 +1,4 @@
-import { pick, zip, get, mapValues, fromPairs } from 'lodash';
+import { identity, pick, zip, get, mapValues, fromPairs } from 'lodash';
 import * as Ajv from 'ajv';
 
 export class ValidationError extends Error {
@@ -21,6 +21,9 @@ function createValidator(): Ajv.Ajv {
     compile: (onOrOff: boolean, parentSchema: any) => {
       if (parentSchema.format !== 'date-time') {
         throw new Error('Format should be date-time when using coerce-date');
+      }
+      if (onOrOff !== true) {
+        return identity;
       }
       return (v: any, _dataPath?: string, obj?: object | any[], key?: string | number) => {
         if (obj === undefined || key === undefined) {
