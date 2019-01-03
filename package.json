@@ -32,7 +32,7 @@
     "@types/chai-as-promised": "^7.1.0",
     "@types/glob": "^7.1.1",
     "@types/koa-bodyparser": "^4.2.1",
-    "@types/koa-router": "^7.0.35",
+    "@types/koa-router": "7.0.35",
     "@types/lodash": "^4.14.118",
     "@types/mustache": "^0.8.30",
     "@types/mz": "0.0.32",

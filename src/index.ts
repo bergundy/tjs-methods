@@ -52,7 +52,7 @@ function getPackage(role: Role): Package {
     dependencies: {
       '@types/koa': '^2.0.46',
       '@types/koa-bodyparser': '^5.0.1',
-      '@types/koa-router': '^7.0.33',
+      '@types/koa-router': '7.0.35',
       koa: '^2.5.1',
       'koa-bodyparser': '^4.2.1',
       'koa-json-error': '^3.1.2',
