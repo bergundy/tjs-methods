@@ -142,7 +142,7 @@ export default class Handler {
 import { TestClient } from './client';
 export default async function test(client: TestClient) {
  expect(await client.bar('hello', 3, undefined, 'x')).to.equal('x hello 3');
- expect(await client.bar('hello', 3, undefined, undefined)).to.equal('3');
+ expect(await client.bar('hello', 3)).to.equal('3');
 }
 `;
     await new TestCase(schema, handler, tester).run();
