@@ -60,6 +60,12 @@ export type Context = ClientContext;
 
 {{#classes}}
 {{^attributes}}
+export interface {{name}} {
+  {{#methods}}
+  {{name}}({{#clientContext}}ctx: Context ,{{/clientContext}}{{#parameters}}{{name}}{{#optional}}?{{/optional}}: {{{type}}}{{^last}}, {{/last}}{{/parameters}}): Promise<{{{returnType}}}>;
+  {{/methods}}
+}
+
 export class {{name}}Client {
   public static readonly methods = [
     {{#methods}}
